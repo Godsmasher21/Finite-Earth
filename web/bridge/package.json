@@ -1,0 +1,16 @@
+{
+  "name": "finite-earth-web-bridge",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "dev": "tsc -w -p tsconfig.json"
+  },
+  "dependencies": {
+    "thirdweb": "^5.90.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.2"
+  }
+}

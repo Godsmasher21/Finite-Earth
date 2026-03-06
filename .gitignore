@@ -1,0 +1,84 @@
+# ----------------------------
+# Unity
+# ----------------------------
+[Ll]ibrary/
+[Tt]emp/
+[Oo]bj/
+[Bb]uild/
+[Bb]uilds/
+[Ll]ogs/
+[Mm]emoryCaptures/
+[Rr]ecordings/
+[Uu]ser[Ss]ettings/
+tmp_pdf_images2/
+
+# Generated Unity/IDE files
+*.csproj
+*.sln
+*.slnx
+*.unityproj
+*.tmp
+*.user
+*.userprefs
+*.pidb
+*.booproj
+*.svd
+*.pdb
+*.mdb
+
+# Visual Studio / JetBrains / VS Code
+.vs/
+.idea/
+.vscode/
+
+# ----------------------------
+# Node / TypeScript
+# ----------------------------
+**/node_modules/
+**/dist/
+**/.turbo/
+**/.next/
+**/.cache/
+*.tsbuildinfo
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# ----------------------------
+# Rust / SpacetimeDB module
+# ----------------------------
+**/target/
+Cargo.lock
+
+# ----------------------------
+# Hardhat / Solidity tooling
+# ----------------------------
+contracts/artifacts/
+contracts/cache/
+contracts/typechain-types/
+contracts/coverage/
+contracts/coverage.json
+
+# ----------------------------
+# Runtime data, secrets, and local env
+# ----------------------------
+*.db
+*.db-journal
+*.sqlite
+*.sqlite3
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+backend/**/.env
+contracts/.env
+web/bridge/.env
+
+# Keep env templates tracked
+!**/.env.example
+
+# OS files
+.DS_Store
+Thumbs.db

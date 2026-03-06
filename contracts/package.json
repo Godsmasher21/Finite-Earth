@@ -1,0 +1,19 @@
+{
+  "name": "finite-earth-contracts",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "build": "hardhat compile",
+    "test": "hardhat test",
+    "deploy:megaeth-testnet": "hardhat run scripts/deploy-global-counters.ts --network megaethTestnet"
+  },
+  "dependencies": {
+    "@openzeppelin/contracts": "^5.2.0"
+  },
+  "devDependencies": {
+    "@nomicfoundation/hardhat-toolbox": "^6.1.0",
+    "dotenv": "^16.6.1",
+    "hardhat": "^2.24.3",
+    "typescript": "^5.9.2"
+  }
+}

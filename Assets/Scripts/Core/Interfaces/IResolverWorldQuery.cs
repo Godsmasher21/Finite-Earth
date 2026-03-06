@@ -1,0 +1,21 @@
+public interface IResolverWorldQuery
+{
+    bool TryGetTileType(HexCoord coord, out TileType tileType);
+    bool TryGetBuildingType(HexCoord coord, out BuildingType buildingType);
+    bool IsOwned(HexCoord coord, string walletAddress);
+    bool HasAnyOwnedTiles(string walletAddress);
+    bool IsAdjacentToOwned(HexCoord coord, string walletAddress);
+    bool HasAnySettlement();
+    bool IsWithinSettlementRadius(HexCoord coord, int radius);
+    bool HasAdjacentTerrainType(HexCoord coord, TileType requiredType);
+    int GetOwnedCount(string walletAddress);
+    int CountTilesOfType(TileType type);
+    int CalculateCarbonScore();
+}
+
+public interface IResolverWorldMutation
+{
+    void SetOwned(HexCoord coord, string walletAddress, bool isOwned);
+    bool TrySetTileType(HexCoord coord, TileType tileType);
+    bool TrySetBuildingType(HexCoord coord, BuildingType buildingType);
+}

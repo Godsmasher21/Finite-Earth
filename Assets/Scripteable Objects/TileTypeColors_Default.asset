@@ -1,0 +1,50 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7ee1e7f2c8ee6f7408294688e19ccdc1, type: 3}
+  m_Name: TileTypeColors_Default
+  m_EditorClassIdentifier: Assembly-CSharp::TileTypeColors
+  colors:
+  - type: 0
+    tile: {fileID: 11400000, guid: a53c2c697abf17244a52a4ea855a50e1, type: 2}
+    color: {r: 0.08781572, g: 0.3962264, b: 0.07849763, a: 1}
+  - type: 1
+    tile: {fileID: 11400000, guid: 3ab4071e85e22c74d9d5a8c602870543, type: 2}
+    color: {r: 0.36845842, g: 0.8679245, b: 0.42419237, a: 1}
+  - type: 2
+    tile: {fileID: 11400000, guid: e14915a9eb5737f4380bdd3477953384, type: 2}
+    color: {r: 0.38364768, g: 0.38364768, b: 0.38364768, a: 1}
+  - type: 3
+    tile: {fileID: 11400000, guid: 35d28be4c0febcc458062bbd27d13a4e, type: 2}
+    color: {r: 0.3216051, g: 0.51269454, b: 0.63522005, a: 1}
+  - type: 4
+    tile: {fileID: 11400000, guid: 115d44952ce41ae40b1344bf8625673b, type: 2}
+    color: {r: 0.61006284, g: 0.52304167, b: 0.0556346, a: 1}
+  - type: 5
+    tile: {fileID: 11400000, guid: 7022c03581fb0fd43bed4587c4c3aac7, type: 2}
+    color: {r: 0.408805, g: 0.17323788, b: 0.060420834, a: 1}
+  - type: 6
+    tile: {fileID: 11400000, guid: 6f7a0bc72cff37d488b6f8109b1e7943, type: 2}
+    color: {r: 0.442085, g: 0.6207547, b: 0.30754718, a: 1}
+  - type: 7
+    tile: {fileID: 11400000, guid: b0d23d8b9d624854590d0fa21df3c374, type: 2}
+    color: {r: 0.7347528, g: 0.6813761, b: 0.33749995, a: 1}
+  - type: 8
+    tile: {fileID: 11400000, guid: e750fe5488a7dcb46af0e6c44234153e, type: 2}
+    color: {r: 0.73333335, g: 0.73333335, b: 0.73333335, a: 1}
+  - type: 9
+    tile: {fileID: 11400000, guid: b9a97d80485cf1c438780024af777546, type: 2}
+    color: {r: 0.53962266, g: 0.53962266, b: 0.53962266, a: 1}
+  - type: 10
+    tile: {fileID: 11400000, guid: 04e922b7cdf7ecd45b21c02afc21d3b9, type: 2}
+    color: {r: 0.6179245, g: 0.8597483, b: 0.8427013, a: 1}
+  defaultTile: {fileID: 11400000, guid: 3ab4071e85e22c74d9d5a8c602870543, type: 2}
+  defaultColor: {r: 1, g: 1, b: 1, a: 1}
