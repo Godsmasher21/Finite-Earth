@@ -8,9 +8,11 @@ public interface IResolverWorldQuery
     bool HasAnySettlement();
     bool IsWithinSettlementRadius(HexCoord coord, int radius);
     bool HasAdjacentTerrainType(HexCoord coord, TileType requiredType);
+    bool HasTerrainTypeWithinRadius(HexCoord coord, TileType requiredType, int radius);
     int GetOwnedCount(string walletAddress);
     int CountTilesOfType(TileType type);
     int CalculateCarbonScore();
+    int GetMiningCount(HexCoord coord);
 }
 
 public interface IResolverWorldMutation

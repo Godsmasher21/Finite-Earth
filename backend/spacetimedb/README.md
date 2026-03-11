@@ -17,4 +17,4 @@ Authoritative world-state module (single persistent world, deterministic turn qu
 3. `apply_intent`
 4. `publish_commit`
 
-This folder contains a runnable module scaffold and the canonical schema used by the rest of the stack.
+This Rust scaffold is deprecated. The authoritative SpacetimeDB module now lives in the project root at `spacetimedb/` as a C# module to match the Unity workflow.

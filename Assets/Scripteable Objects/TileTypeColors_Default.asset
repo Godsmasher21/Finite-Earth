@@ -38,13 +38,19 @@ MonoBehaviour:
     tile: {fileID: 11400000, guid: b0d23d8b9d624854590d0fa21df3c374, type: 2}
     color: {r: 0.7347528, g: 0.6813761, b: 0.33749995, a: 1}
   - type: 8
+    tile: {fileID: 11400000, guid: b425e424c74d62344bd041294e280a73, type: 2}
+    color: {r: 0.764706, g: 0.89411765, b: 0.94509804, a: 1}
+  - type: 9
     tile: {fileID: 11400000, guid: e750fe5488a7dcb46af0e6c44234153e, type: 2}
     color: {r: 0.73333335, g: 0.73333335, b: 0.73333335, a: 1}
-  - type: 9
+  - type: 10
     tile: {fileID: 11400000, guid: b9a97d80485cf1c438780024af777546, type: 2}
     color: {r: 0.53962266, g: 0.53962266, b: 0.53962266, a: 1}
-  - type: 10
+  - type: 11
     tile: {fileID: 11400000, guid: 04e922b7cdf7ecd45b21c02afc21d3b9, type: 2}
     color: {r: 0.6179245, g: 0.8597483, b: 0.8427013, a: 1}
+  - type: 12
+    tile: {fileID: 11400000, guid: f1748d327cfec1a48872b4568f8c6950, type: 2}
+    color: {r: 0.32156864, g: 0.5058824, b: 0.62352943, a: 1}
   defaultTile: {fileID: 11400000, guid: 3ab4071e85e22c74d9d5a8c602870543, type: 2}
   defaultColor: {r: 1, g: 1, b: 1, a: 1}

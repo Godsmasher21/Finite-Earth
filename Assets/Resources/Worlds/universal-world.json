@@ -2,7 +2,7 @@
   "worldId": "finite-earth-alpha",
   "displayName": "Finite Earth Alpha",
   "rows": [
-    "WWWWWWWWWWWWWWWWWWWWWWWW",
+    "IIIIIIIIIIIIIIIIIIIIIIII",
     "WWWWWWWWWWWWWWWWWWWWWWWW",
     "WWPPPPPFFFFFPPPPPPPPWWWW",
     "WPPPPPFFFFFFPPPPPEPPPWWW",
@@ -16,7 +16,7 @@
     "WPPBBBPPPPPPPPPPPPPPPPWW",
     "WWPPPPPDDPPPPPPPPPPPPWWW",
     "WWWWPPPPPPPPPPPPPPWWWWWW",
-    "WWWWWWWWWWWWWWWWWWWWWWWW"
+    "IIIIIIIIIIIIIIIIIIIIIIII"
   ],
   "spawnPoints": [
     { "id": "northwest", "x": 3, "y": 11 },

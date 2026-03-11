@@ -7,28 +7,41 @@ dotenv.config();
 
 async function main(): Promise<void> {
   const [deployer] = await ethers.getSigners();
-  const owner = process.env.GLOBAL_COUNTERS_OWNER ?? deployer.address;
-  const updater = process.env.GLOBAL_COUNTERS_UPDATER ?? deployer.address;
+  const owner = process.env.GLOBAL_TOKENS_OWNER ?? deployer.address;
+  const operator = process.env.GLOBAL_TOKENS_OPERATOR ?? deployer.address;
 
   console.log(`[deploy] deployer=${deployer.address}`);
   console.log(`[deploy] owner=${owner}`);
-  console.log(`[deploy] updater=${updater}`);
+  console.log(`[deploy] operator=${operator}`);
 
-  const factory = await ethers.getContractFactory("GlobalCounters");
-  const contract = await factory.deploy(owner, updater);
-  await contract.waitForDeployment();
+  const forestFactory = await ethers.getContractFactory("GlobalForestToken");
+  const forest = await forestFactory.deploy(owner, operator);
+  await forest.waitForDeployment();
 
-  const address = await contract.getAddress();
-  const deployTx = contract.deploymentTransaction();
-  const receipt = deployTx ? await deployTx.wait(1) : null;
+  const carbonFactory = await ethers.getContractFactory("GlobalCarbonToken");
+  const carbon = await carbonFactory.deploy(owner, operator);
+  await carbon.waitForDeployment();
+
+  const tilesFactory = await ethers.getContractFactory("TilesOwnedSBT");
+  const tiles = await tilesFactory.deploy(owner, operator);
+  await tiles.waitForDeployment();
+
+  const forestAddress = await forest.getAddress();
+  const carbonAddress = await carbon.getAddress();
+  const tilesAddress = await tiles.getAddress();
+
+  const forestDeployTx = forest.deploymentTransaction();
+  const forestReceipt = forestDeployTx ? await forestDeployTx.wait(1) : null;
 
   const network = await ethers.provider.getNetwork();
   const metadata = {
-    name: "GlobalCounters",
-    address,
+    name: "FiniteEarthGlobalTokens",
+    forestToken: forestAddress,
+    carbonToken: carbonAddress,
+    tilesOwnedSbt: tilesAddress,
     chainId: Number(network.chainId),
-    deployBlock: receipt?.blockNumber ?? 0,
-    deployTxHash: receipt?.hash ?? "",
+    deployBlock: forestReceipt?.blockNumber ?? 0,
+    deployTxHash: forestReceipt?.hash ?? "",
     abiVersion: "1.0.0",
     deployedAtIso: new Date().toISOString()
   };
@@ -36,12 +49,14 @@ async function main(): Promise<void> {
   const outputDir = path.join(process.cwd(), "deployments");
   fs.mkdirSync(outputDir, { recursive: true });
   fs.writeFileSync(
-    path.join(outputDir, `global-counters-${metadata.chainId}.json`),
+    path.join(outputDir, `global-tokens-${metadata.chainId}.json`),
     JSON.stringify(metadata, null, 2),
     "utf-8"
   );
 
-  console.log(`[deploy] contract=${address}`);
+  console.log(`[deploy] forest=${forestAddress}`);
+  console.log(`[deploy] carbon=${carbonAddress}`);
+  console.log(`[deploy] tiles=${tilesAddress}`);
 }
 
 main().catch((error) => {

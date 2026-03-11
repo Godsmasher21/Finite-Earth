@@ -11,34 +11,85 @@ type CommitRow = {
   batchHash: string;
 };
 
+type CycleDelta = {
+  tick: number;
+  forestDelta: number;
+  carbonDelta: number;
+  tilesOwned: Record<string, number>;
+};
+
+const STDB_HTTP_URL = process.env.STDB_HTTP_URL ?? "";
 const GATEWAY_URL = process.env.GATEWAY_URL ?? "http://localhost:8080";
+const USE_GATEWAY = process.env.RELAYER_USE_GATEWAY === "true";
+
 const MEGAETH_RPC_URL = process.env.MEGAETH_RPC_URL ?? "http://localhost:8545";
 const RELAYER_PRIVATE_KEY = process.env.RELAYER_PRIVATE_KEY ?? "";
-const GLOBAL_COUNTERS_ADDRESS = process.env.GLOBAL_COUNTERS_ADDRESS ?? "";
+const GLOBAL_FOREST_TOKEN_ADDRESS = process.env.GLOBAL_FOREST_TOKEN_ADDRESS ?? "";
+const GLOBAL_CARBON_TOKEN_ADDRESS = process.env.GLOBAL_CARBON_TOKEN_ADDRESS ?? "";
+const TILES_OWNED_SBT_ADDRESS = process.env.TILES_OWNED_SBT_ADDRESS ?? "";
 const POLL_MS = Number(process.env.RELAYER_POLL_MS ?? 3000);
 const MAX_BATCH_COMMITS = 200;
 
-const ABI = [
-  "function commitCycle(uint64 cycleId,int256 forestDelta,int256 carbonDelta,bytes32 actionBatchHash,uint32 actionCount) external",
-  "event CycleCommitted(uint64 indexed cycleId,int256 forestDelta,int256 carbonDelta,int256 forestTotal,int256 carbonTotal,bytes32 actionBatchHash,uint32 actionCount)"
+const ERC20_ABI = [
+  "function mint(address to,uint256 amount) external",
+  "function burn(address from,uint256 amount) external"
 ];
 
-if (!RELAYER_PRIVATE_KEY || !GLOBAL_COUNTERS_ADDRESS) {
-  console.error("[relayer] missing RELAYER_PRIVATE_KEY or GLOBAL_COUNTERS_ADDRESS");
+const SBT_ABI = [
+  "function setBalance(address wallet,uint256 amount) external"
+];
+
+if (!RELAYER_PRIVATE_KEY || !GLOBAL_FOREST_TOKEN_ADDRESS || !GLOBAL_CARBON_TOKEN_ADDRESS || !TILES_OWNED_SBT_ADDRESS) {
+  console.error("[relayer] missing token addresses or RELAYER_PRIVATE_KEY");
   process.exit(1);
 }
 
 const provider = new JsonRpcProvider(MEGAETH_RPC_URL);
 const wallet = new Wallet(RELAYER_PRIVATE_KEY, provider);
-const counters = new Contract(GLOBAL_COUNTERS_ADDRESS, ABI, wallet);
+const forestToken = new Contract(GLOBAL_FOREST_TOKEN_ADDRESS, ERC20_ABI, wallet);
+const carbonToken = new Contract(GLOBAL_CARBON_TOKEN_ADDRESS, ERC20_ABI, wallet);
+const tilesSbt = new Contract(TILES_OWNED_SBT_ADDRESS, SBT_ABI, wallet);
 
 const retryBackoffMs = new Map<string, number>();
 const nextAllowedAttemptAt = new Map<string, number>();
 
 async function tick(): Promise<void> {
+  const deltas = await fetchCycleDeltas();
+  if (deltas.length === 0) {
+    return;
+  }
+
+  const cycle = deltas[0];
+  await applyTokenDelta(forestToken, cycle.forestDelta);
+  await applyTokenDelta(carbonToken, cycle.carbonDelta);
+
+  const tilesEntries = Object.entries(cycle.tilesOwned ?? {});
+  for (const [walletAddress, balance] of tilesEntries) {
+    await tilesSbt.setBalance(walletAddress, BigInt(balance));
+  }
+
+  if (USE_GATEWAY) {
+    await ackGatewayCommits(cycle.tick);
+  }
+}
+
+async function fetchCycleDeltas(): Promise<CycleDelta[]> {
+  if (USE_GATEWAY) {
+    return fetchFromGateway();
+  }
+
+  if (!STDB_HTTP_URL) {
+    return [];
+  }
+
+  console.warn("[relayer] STDB polling not configured yet.");
+  return [];
+}
+
+async function fetchFromGateway(): Promise<CycleDelta[]> {
   const pending = await fetchPendingCommits();
   if (pending.length === 0) {
-    return;
+    return [];
   }
 
   const selected = pending
@@ -46,47 +97,22 @@ async function tick(): Promise<void> {
     .slice(0, MAX_BATCH_COMMITS);
 
   if (selected.length === 0) {
-    return;
+    return [];
   }
 
-  const cycleId = selected[0].tick;
-  const cycleBatch = selected.filter((row) => row.tick === cycleId).slice(0, MAX_BATCH_COMMITS);
+  const tick = selected[0].tick;
+  const cycleBatch = selected.filter((row) => row.tick === tick).slice(0, MAX_BATCH_COMMITS);
   const forestDelta = cycleBatch.reduce((sum, item) => sum + item.globalForestDelta, 0);
   const carbonDelta = cycleBatch.reduce((sum, item) => sum + item.globalCarbonDelta, 0);
-  const actionCount = cycleBatch.filter((item) => item.accepted).length;
-  const batchHash = cycleBatch[cycleBatch.length - 1].batchHash;
 
-  try {
-    const tx = await counters.commitCycle(
-      BigInt(cycleId),
-      BigInt(forestDelta),
-      BigInt(carbonDelta),
-      batchHash,
-      actionCount
-    );
-
-    const receipt = await tx.wait(1);
-    console.log(`[relayer] committed cycle=${cycleId} tx=${receipt?.hash ?? tx.hash}`);
-
-    await notifyGatewayCycleCommitted({
-      tick: cycleId,
-      cycleId,
+  return [
+    {
+      tick,
       forestDelta,
       carbonDelta,
-      txHash: receipt?.hash ?? tx.hash
-    });
-
-    for (const commit of cycleBatch) {
-      await ackCommit(commit.commitId);
-      retryBackoffMs.delete(commit.commitId);
-      nextAllowedAttemptAt.delete(commit.commitId);
+      tilesOwned: {}
     }
-  } catch (error) {
-    console.error(`[relayer] commit failed cycle=${cycleId}:`, error);
-    for (const commit of cycleBatch) {
-      registerFailure(commit.commitId);
-    }
-  }
+  ];
 }
 
 async function fetchPendingCommits(): Promise<CommitRow[]> {
@@ -97,6 +123,22 @@ async function fetchPendingCommits(): Promise<CommitRow[]> {
 
   const data = await response.json() as { commits: CommitRow[] };
   return data.commits ?? [];
+}
+
+async function ackGatewayCommits(tick: number): Promise<void> {
+  const pending = await fetchPendingCommits();
+  const cycleBatch = pending.filter((row) => row.tick === tick);
+
+  for (const commit of cycleBatch) {
+    try {
+      await ackCommit(commit.commitId);
+      retryBackoffMs.delete(commit.commitId);
+      nextAllowedAttemptAt.delete(commit.commitId);
+    } catch (error) {
+      registerFailure(commit.commitId);
+      console.error(`[relayer] ack failed for ${commit.commitId}:`, error);
+    }
+  }
 }
 
 async function ackCommit(commitId: string): Promise<void> {
@@ -121,24 +163,20 @@ function registerFailure(commitId: string): void {
   nextAllowedAttemptAt.set(commitId, Date.now() + next);
 }
 
-async function notifyGatewayCycleCommitted(payload: {
-  tick: number;
-  cycleId: number;
-  forestDelta: number;
-  carbonDelta: number;
-  txHash: string;
-}): Promise<void> {
-  const response = await fetch(`${GATEWAY_URL}/internal/cycle-committed`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify(payload)
-  });
-
-  if (!response.ok) {
-    throw new Error(`Failed to notify gateway of chain commit (${response.status})`);
+async function applyTokenDelta(contract: Contract, delta: number): Promise<void> {
+  if (delta === 0) {
+    return;
   }
+
+  if (delta > 0) {
+    const tx = await contract.mint(wallet.address, BigInt(delta));
+    await tx.wait(1);
+    return;
+  }
+
+  const burnAmount = Math.abs(delta);
+  const tx = await contract.burn(wallet.address, BigInt(burnAmount));
+  await tx.wait(1);
 }
 
 async function main(): Promise<void> {

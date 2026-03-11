@@ -53,19 +53,38 @@ app.get("/health", (_req, res) => {
   });
 });
 
-app.get("/leaderboard", (_req, res) => {
+app.get("/leaderboard", (req, res) => {
+  const limit = parseIntQuery(req.query.limit, 100, 1, 200);
+  const offset = parseIntQuery(req.query.offset, 0, 0, 10_000);
+
+  const totalRow = db
+    .prepare("SELECT COUNT(1) AS count FROM leaderboard")
+    .get() as { count: number };
+
   const rows = db
     .prepare(`
       SELECT wallet_address, sustainability_score, actions_taken, owned_tiles_count, updated_at_ms
       FROM leaderboard
       ORDER BY sustainability_score DESC
-      LIMIT 100
+      LIMIT ? OFFSET ?
     `)
-    .all();
+    .all(limit, offset) as Array<{
+      wallet_address: string;
+      sustainability_score: number;
+      actions_taken: number;
+      owned_tiles_count: number;
+      updated_at_ms: number;
+    }>;
 
   res.json({
     worldId: "finite-earth-alpha",
-    rows
+    total: totalRow.count,
+    limit,
+    offset,
+    rows: rows.map((row, index) => ({
+      rank: offset + index + 1,
+      ...row
+    }))
   });
 });
 
@@ -234,4 +253,13 @@ function rowCount(tableName: string): number {
 
 function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function parseIntQuery(raw: unknown, fallback: number, min: number, max: number): number {
+  const parsed = Number(raw);
+  if (!Number.isFinite(parsed)) {
+    return fallback;
+  }
+
+  return Math.min(max, Math.max(min, Math.trunc(parsed)));
 }

@@ -44,5 +44,7 @@ npm run dev
 3. `GET /world/snapshot`
 4. `WS /realtime?token=...`
 5. `GET /leaderboard`
+   - supports `limit` and `offset` query params
+   - returns ranked players with `rank`, `wallet_address`, `sustainability_score`, `actions_taken`, `owned_tiles_count`
 6. `GET /metrics/timeseries`
 7. `GET /export/csv`

@@ -21,6 +21,8 @@ public class HexWorldGeneratorTilemap : MonoBehaviour
     [Header("Runtime Grid")]
     [SerializeField] private Grid runtimeGrid;
     [SerializeField] private string gridObjectName = "RuntimeHexGrid";
+    [SerializeField] private Vector3 runtimeGridCellSize = new Vector3(1f, 0.7f, 0f);
+    [SerializeField] private Vector3 runtimeGridCellGap = Vector3.zero;
     
     [Header("Tile Alignment")]
     [SerializeField] private Vector3 terrainTileAnchor = Vector3.zero;
@@ -51,6 +53,7 @@ public class HexWorldGeneratorTilemap : MonoBehaviour
 
     private TileType[,] typeMap;
     private BuildingType[,] buildingMap;
+    private int[,] miningCountMap;
     private Vector3Int[] generatedSpawnPoints = Array.Empty<Vector3Int>();
     private UniversalWorldFileData cachedWorldFileData;
     private bool isGenerated;
@@ -122,6 +125,7 @@ public class HexWorldGeneratorTilemap : MonoBehaviour
 
         typeMap = parsedMap;
         buildingMap = new BuildingType[Width, Height];
+        miningCountMap = new int[Width, Height];
         generatedSpawnPoints = BuildProceduralSpawnPoints();
 
         tilemap.ClearAllTiles();
@@ -197,6 +201,37 @@ public class HexWorldGeneratorTilemap : MonoBehaviour
         PaintTerrainCell(cell, newType);
         tilemap.RefreshTile(cell);
         return true;
+    }
+
+    public int GetMiningCount(Vector3Int cell)
+    {
+        if (miningCountMap == null || !InBounds(cell))
+        {
+            return 0;
+        }
+
+        return miningCountMap[cell.x, cell.y];
+    }
+
+    public int IncrementMiningCount(Vector3Int cell)
+    {
+        if (miningCountMap == null || !InBounds(cell))
+        {
+            return 0;
+        }
+
+        miningCountMap[cell.x, cell.y] = Mathf.Max(0, miningCountMap[cell.x, cell.y] + 1);
+        return miningCountMap[cell.x, cell.y];
+    }
+
+    public void ResetMiningCount(Vector3Int cell)
+    {
+        if (miningCountMap == null || !InBounds(cell))
+        {
+            return;
+        }
+
+        miningCountMap[cell.x, cell.y] = 0;
     }
 
     public bool TryGetBuildingType(Vector3Int cell, out BuildingType buildingType)
@@ -393,6 +428,38 @@ public class HexWorldGeneratorTilemap : MonoBehaviour
         return false;
     }
 
+    public bool HasTerrainTypeWithinRadius(Vector3Int cell, TileType requiredType, int radius)
+    {
+        if (typeMap == null || !InBounds(cell))
+        {
+            return false;
+        }
+
+        int effectiveRadius = Mathf.Max(1, radius);
+        int minX = Mathf.Max(0, cell.x - effectiveRadius);
+        int maxX = Mathf.Min(Width - 1, cell.x + effectiveRadius);
+        int minY = Mathf.Max(0, cell.y - effectiveRadius);
+        int maxY = Mathf.Min(Height - 1, cell.y + effectiveRadius);
+
+        for (int y = minY; y <= maxY; y++)
+        {
+            for (int x = minX; x <= maxX; x++)
+            {
+                if (typeMap[x, y] != requiredType)
+                {
+                    continue;
+                }
+
+                if (HexDistance(cell, new Vector3Int(x, y, 0)) <= effectiveRadius)
+                {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
     public bool IsWithinSettlementRadius(Vector3Int cell, int radius = -1)
     {
         if (buildingMap == null || !InBounds(cell))
@@ -577,6 +644,8 @@ public class HexWorldGeneratorTilemap : MonoBehaviour
                 return TileType.DeforestedForest;
             case 'A':
                 return TileType.Farmland;
+            case 'I':
+                return TileType.Ice;
             default:
                 return TileType.Plains;
         }
@@ -716,7 +785,11 @@ public class HexWorldGeneratorTilemap : MonoBehaviour
 
         runtimeGrid.cellLayout = GridLayout.CellLayout.Hexagon;
         runtimeGrid.cellSwizzle = GridLayout.CellSwizzle.XYZ;
-        runtimeGrid.cellSize = new Vector3(0.8659766f, 1f, 0f);
+        runtimeGrid.cellSize = new Vector3(
+            Mathf.Max(0.01f, runtimeGridCellSize.x),
+            Mathf.Max(0.01f, runtimeGridCellSize.y),
+            runtimeGridCellSize.z);
+        runtimeGrid.cellGap = runtimeGridCellGap;
 
         if (tilemap == null)
         {
@@ -953,6 +1026,8 @@ public class HexWorldGeneratorTilemap : MonoBehaviour
 
         CarveHydrology(map, width, height, landCells, seed);
         SmoothBiomeTransitions(map, width, height, 2);
+        CreateDesertOases(map, width, height, seed);
+        ApplyPolarIce(map, width, height);
 
         Debug.Log(
             $"HexWorldGeneratorTilemap: generated procedural world {width}x{height} " +
@@ -961,6 +1036,23 @@ public class HexWorldGeneratorTilemap : MonoBehaviour
 
         UnityEngine.Random.state = previousState;
         return map;
+    }
+
+    private static void ApplyPolarIce(TileType[,] map, int width, int height)
+    {
+        if (map == null || width <= 0 || height <= 0)
+        {
+            return;
+        }
+
+        int topRow = height - 1;
+        int bottomRow = 0;
+
+        for (int x = 0; x < width; x++)
+        {
+            map[x, bottomRow] = TileType.Ice;
+            map[x, topRow] = TileType.Ice;
+        }
     }
 
     private Vector3Int[] BuildProceduralSpawnPoints()
@@ -1126,6 +1218,297 @@ public class HexWorldGeneratorTilemap : MonoBehaviour
             int radius = radiusRoll < 18 ? 3 : (radiusRoll < 58 ? 2 : 1);
             CarveLake(map, width, height, center, radius, rng);
         }
+    }
+
+    private static void CreateDesertOases(
+        TileType[,] map,
+        int width,
+        int height,
+        int seed)
+    {
+        if (map == null || width < 12 || height < 8)
+        {
+            return;
+        }
+
+        var desertCandidates = new List<Vector3Int>();
+        for (int y = 2; y < height - 2; y++)
+        {
+            for (int x = 2; x < width - 2; x++)
+            {
+                if (map[x, y] != TileType.Desert)
+                {
+                    continue;
+                }
+
+                Vector3Int cell = new Vector3Int(x, y, 0);
+                if (IsAdjacentToWater(map, width, height, cell))
+                {
+                    continue;
+                }
+
+                if (!IsInterior(x, y, width, height, 2))
+                {
+                    continue;
+                }
+
+                desertCandidates.Add(cell);
+            }
+        }
+
+        if (desertCandidates.Count == 0)
+        {
+            return;
+        }
+
+        var rng = new System.Random(seed ^ 0x00C0FFEE);
+        int oasisTarget = Mathf.Clamp(Mathf.RoundToInt(desertCandidates.Count / 22f), 2, Mathf.Max(2, desertCandidates.Count / 3));
+        int minSpacing = Mathf.Max(4, Mathf.RoundToInt(Mathf.Min(width, height) * 0.08f));
+        var placed = new List<Vector3Int>();
+        int attempts = Mathf.Max(48, desertCandidates.Count * 3);
+
+        for (int i = 0; i < attempts && placed.Count < oasisTarget; i++)
+        {
+            Vector3Int desertCell = desertCandidates[rng.Next(desertCandidates.Count)];
+            if (!HasMinHexSpacing(desertCell, placed, minSpacing))
+            {
+                continue;
+            }
+
+            if (!TryPickOasisCenter(map, width, height, desertCell, rng, out Vector3Int center))
+            {
+                continue;
+            }
+
+            CarveOasisPocket(map, width, height, center, rng);
+            placed.Add(desertCell);
+        }
+    }
+
+    private static bool TryPickOasisCenter(
+        TileType[,] map,
+        int width,
+        int height,
+        Vector3Int desertCell,
+        System.Random rng,
+        out Vector3Int center)
+    {
+        var candidates = new List<Vector3Int>();
+        Vector3Int[] neighbors = GetNeighborsPointTop(desertCell);
+        for (int i = 0; i < neighbors.Length; i++)
+        {
+            Vector3Int n = neighbors[i];
+            if (!InBounds(n.x, n.y, width, height) || !IsInterior(n.x, n.y, width, height, 2))
+            {
+                continue;
+            }
+
+            TileType terrain = map[n.x, n.y];
+            if (terrain == TileType.Water || terrain == TileType.Mountain)
+            {
+                continue;
+            }
+
+            candidates.Add(n);
+        }
+
+        if (candidates.Count == 0)
+        {
+            center = desertCell;
+            return IsInterior(center.x, center.y, width, height, 2);
+        }
+
+        float bestScore = float.NegativeInfinity;
+        int bestIndex = 0;
+        for (int i = 0; i < candidates.Count; i++)
+        {
+            Vector3Int candidate = candidates[i];
+            TileType terrain = map[candidate.x, candidate.y];
+            float score = 0f;
+            switch (terrain)
+            {
+                case TileType.Plains:
+                    score += 3.0f;
+                    break;
+                case TileType.Barren:
+                case TileType.DeforestedForest:
+                    score += 2.2f;
+                    break;
+                case TileType.Forest:
+                case TileType.Farmland:
+                    score += 1.2f;
+                    break;
+                case TileType.Desert:
+                    score += 0.5f;
+                    break;
+            }
+
+            score += (float)rng.NextDouble() * 0.85f;
+            if (score > bestScore)
+            {
+                bestScore = score;
+                bestIndex = i;
+            }
+        }
+
+        center = candidates[bestIndex];
+        return true;
+    }
+
+    private static void CarveOasisPocket(
+        TileType[,] map,
+        int width,
+        int height,
+        Vector3Int center,
+        System.Random rng)
+    {
+        if (!InBounds(center.x, center.y, width, height))
+        {
+            return;
+        }
+
+        map[center.x, center.y] = TileType.Water;
+
+        Vector3Int[] neighbors = GetNeighborsPointTop(center);
+        var desertNeighbors = new List<Vector3Int>();
+        var enrichCandidates = new List<Vector3Int>();
+
+        for (int i = 0; i < neighbors.Length; i++)
+        {
+            Vector3Int n = neighbors[i];
+            if (!InBounds(n.x, n.y, width, height))
+            {
+                continue;
+            }
+
+            TileType terrain = map[n.x, n.y];
+            if (terrain == TileType.Water || terrain == TileType.Mountain)
+            {
+                continue;
+            }
+
+            if (terrain == TileType.Desert)
+            {
+                desertNeighbors.Add(n);
+                continue;
+            }
+
+            enrichCandidates.Add(n);
+        }
+
+        // Keep at least one adjacent desert tile so irrigation always has a valid target.
+        int keepDesertCount = desertNeighbors.Count >= 3 ? 2 : Mathf.Min(1, desertNeighbors.Count);
+        for (int i = desertNeighbors.Count - 1; i > 0; i--)
+        {
+            int swapIndex = rng.Next(i + 1);
+            Vector3Int temp = desertNeighbors[i];
+            desertNeighbors[i] = desertNeighbors[swapIndex];
+            desertNeighbors[swapIndex] = temp;
+        }
+
+        for (int i = keepDesertCount; i < desertNeighbors.Count; i++)
+        {
+            Vector3Int desertCell = desertNeighbors[i];
+            map[desertCell.x, desertCell.y] = rng.NextDouble() < 0.78 ? TileType.Plains : TileType.Forest;
+        }
+
+        if (desertNeighbors.Count == 0 && enrichCandidates.Count > 0)
+        {
+            // Fallback: ensure at least one neighboring desert tile can be irrigated.
+            int fallbackIndex = rng.Next(enrichCandidates.Count);
+            Vector3Int forcedDesert = enrichCandidates[fallbackIndex];
+            map[forcedDesert.x, forcedDesert.y] = TileType.Desert;
+            enrichCandidates.RemoveAt(fallbackIndex);
+        }
+
+        for (int i = 0; i < enrichCandidates.Count; i++)
+        {
+            Vector3Int n = enrichCandidates[i];
+            TileType terrain = map[n.x, n.y];
+
+            if (terrain == TileType.Barren)
+            {
+                map[n.x, n.y] = rng.NextDouble() < 0.76 ? TileType.Plains : TileType.Forest;
+                continue;
+            }
+
+            if (terrain == TileType.DeforestedForest && rng.NextDouble() < 0.45)
+            {
+                map[n.x, n.y] = TileType.Forest;
+                continue;
+            }
+
+            if (terrain == TileType.Plains && rng.NextDouble() < 0.18)
+            {
+                map[n.x, n.y] = TileType.Forest;
+            }
+        }
+
+        // Small chance to widen oasis by one extra water hex.
+        if (rng.NextDouble() < 0.33)
+        {
+            var waterCandidates = new List<Vector3Int>();
+            for (int i = 0; i < neighbors.Length; i++)
+            {
+                Vector3Int n = neighbors[i];
+                if (!InBounds(n.x, n.y, width, height))
+                {
+                    continue;
+                }
+
+                TileType terrain = map[n.x, n.y];
+                if (terrain != TileType.Water && terrain != TileType.Mountain && terrain != TileType.Desert)
+                {
+                    waterCandidates.Add(n);
+                }
+            }
+
+            if (waterCandidates.Count > 0)
+            {
+                Vector3Int extra = waterCandidates[rng.Next(waterCandidates.Count)];
+                map[extra.x, extra.y] = TileType.Water;
+            }
+        }
+
+        if (!IsAdjacentToTerrain(map, width, height, center, TileType.Desert))
+        {
+            // Final safety net in case widening removed the only irrigatable edge.
+            for (int i = 0; i < neighbors.Length; i++)
+            {
+                Vector3Int n = neighbors[i];
+                if (!InBounds(n.x, n.y, width, height))
+                {
+                    continue;
+                }
+
+                TileType terrain = map[n.x, n.y];
+                if (terrain == TileType.Water || terrain == TileType.Mountain)
+                {
+                    continue;
+                }
+
+                map[n.x, n.y] = TileType.Desert;
+                break;
+            }
+        }
+    }
+
+    private static bool HasMinHexSpacing(Vector3Int candidate, List<Vector3Int> placed, int minSpacing)
+    {
+        if (placed == null || placed.Count == 0)
+        {
+            return true;
+        }
+
+        for (int i = 0; i < placed.Count; i++)
+        {
+            if (HexDistance(candidate, placed[i]) < minSpacing)
+            {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     private static bool CarveRiverPath(
@@ -1438,6 +1821,16 @@ public class HexWorldGeneratorTilemap : MonoBehaviour
 
     private static bool IsAdjacentToWater(TileType[,] map, int width, int height, Vector3Int cell)
     {
+        return IsAdjacentToTerrain(map, width, height, cell, TileType.Water);
+    }
+
+    private static bool IsAdjacentToTerrain(
+        TileType[,] map,
+        int width,
+        int height,
+        Vector3Int cell,
+        TileType targetTerrain)
+    {
         Vector3Int[] neighbors = GetNeighborsPointTop(cell);
         for (int i = 0; i < neighbors.Length; i++)
         {
@@ -1447,7 +1840,7 @@ public class HexWorldGeneratorTilemap : MonoBehaviour
                 continue;
             }
 
-            if (map[n.x, n.y] == TileType.Water)
+            if (map[n.x, n.y] == targetTerrain)
             {
                 return true;
             }

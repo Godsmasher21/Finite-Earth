@@ -5,10 +5,17 @@ public class NetworkSessionCoordinator : MonoBehaviour
     [SerializeField] private WalletSessionController walletSession;
     [SerializeField] private SpacetimeRealtimeClient realtimeClient;
     [SerializeField] private FiniteEarthGameOrchestrator orchestrator;
+    [SerializeField] private bool startOfflineByDefault = true;
     [SerializeField] private bool beginAuthenticationAutomatically;
+    [SerializeField] private bool autoAuthenticateWhenDemoMode = true;
     private WorldSnapshotMessage pendingSnapshot;
 
     private void Awake()
+    {
+        ResolveRuntimeReferences();
+    }
+
+    private void ResolveRuntimeReferences()
     {
         if (walletSession == null)
         {
@@ -28,6 +35,8 @@ public class NetworkSessionCoordinator : MonoBehaviour
 
     private void OnEnable()
     {
+        ResolveRuntimeReferences();
+
         if (walletSession != null)
         {
             walletSession.AuthenticationSucceeded += HandleAuthenticationSucceeded;
@@ -48,7 +57,23 @@ public class NetworkSessionCoordinator : MonoBehaviour
 
     private void Start()
     {
-        if (beginAuthenticationAutomatically && walletSession != null)
+        ResolveRuntimeReferences();
+
+        if (walletSession == null)
+        {
+            return;
+        }
+
+        if (startOfflineByDefault && !walletSession.IsAuthenticated)
+        {
+            walletSession.BeginOfflineMode("Offline mode enabled by default.");
+            return;
+        }
+
+        bool shouldAutoAuthenticate = beginAuthenticationAutomatically
+            || (autoAuthenticateWhenDemoMode && walletSession.IsRuntimeDemoMode);
+
+        if (shouldAutoAuthenticate)
         {
             walletSession.BeginAuthentication();
         }
@@ -56,6 +81,7 @@ public class NetworkSessionCoordinator : MonoBehaviour
 
     private void Update()
     {
+        ResolveRuntimeReferences();
         TryApplyPendingSnapshot();
     }
 
@@ -81,20 +107,14 @@ public class NetworkSessionCoordinator : MonoBehaviour
 
     private async void HandleAuthenticationSucceeded(string accessToken)
     {
-        if (realtimeClient == null)
-        {
-            return;
-        }
-
         if (orchestrator != null && walletSession != null)
         {
-            bool localBootstrap = string.IsNullOrWhiteSpace(accessToken);
+            bool localBootstrap = walletSession.IsOfflineMode;
             orchestrator.HandleAuthenticatedPlayer(walletSession.WalletAddress, localBootstrap);
         }
 
-        if (string.IsNullOrWhiteSpace(accessToken))
+        if (realtimeClient == null || walletSession == null || walletSession.IsOfflineMode)
         {
-            Debug.Log("Gateway auth bypassed. Running local/offline simulation mode.");
             return;
         }
 

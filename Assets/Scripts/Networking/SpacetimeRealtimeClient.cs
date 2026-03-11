@@ -13,6 +13,7 @@ public class SpacetimeRealtimeClient : MonoBehaviour
 {
     [SerializeField] private string realtimeEndpoint = "ws://localhost:8080/realtime";
     [SerializeField] private bool autoConnectOnStart;
+    [SerializeField] private bool useGatewayRealtime = false;
 
     public bool IsConnected { get; private set; }
 
@@ -49,6 +50,13 @@ public class SpacetimeRealtimeClient : MonoBehaviour
 
     public async Task ConnectAsync(string accessToken)
     {
+        if (!useGatewayRealtime)
+        {
+            IsConnected = false;
+            await Task.CompletedTask;
+            return;
+        }
+
 #if UNITY_WEBGL && !UNITY_EDITOR
         if (IsConnected)
         {

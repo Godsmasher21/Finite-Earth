@@ -47,5 +47,20 @@ public static class ResolutionApplier
 
         worldState.globalForestToken += resolution.globalDelta.forestDelta;
         worldState.globalCarbonToken += resolution.globalDelta.carbonDelta;
+        worldState.ecosystemScore = ComputeEcosystemScore(
+            worldState.globalForestToken,
+            worldState.globalCarbonToken,
+            worldState.initialForest,
+            worldState.carbonCap);
+    }
+
+    private static int ComputeEcosystemScore(int forest, int carbon, int forestMax, int carbonCap)
+    {
+        float safeForest = Math.Max(1f, forestMax);
+        float safeCarbon = Math.Max(1f, carbonCap);
+        float f = Math.Max(0f, Math.Min(1f, forest / safeForest));
+        float c = Math.Max(0f, Math.Min(1f, carbon / safeCarbon));
+        float score = 100f * (0.65f * f + 0.35f * (1f - c));
+        return (int)Math.Round(Math.Max(0f, Math.Min(100f, score)));
     }
 }

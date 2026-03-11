@@ -10,6 +10,18 @@ For `browser client + server + chain`, run all three:
 
 SpacetimeDB Maincloud is for authoritative multiplayer state if you choose to run that module separately. In the current repo runtime, gateway is the active authoritative service.
 
+## Revert from demo to full online mode
+
+`Assets/Scripts/Web3/WalletSessionController.cs` now defaults to full mode:
+
+1. `webGlDemoMode=false`
+2. `mode=demo` query string is still supported when you explicitly want demo behavior.
+
+Practical result:
+
+1. Default WebGL URL runs login + gateway + realtime flow.
+2. Demo mode is opt-in (`?mode=demo`), not default.
+
 ## Files you configure
 
 Created for you:
@@ -35,6 +47,21 @@ Created for you:
 5. **Web bridge bundle**
    - Build in: `web/bridge`
    - Include `web/bridge/dist/index.js` in your Unity WebGL template page before Unity boot
+
+## Maincloud setup (authoritative multiplayer module)
+
+Use this only if you want the SpacetimeDB module path in addition to gateway.
+
+1. Create a Maincloud project/workspace.
+2. Publish module source from `backend/spacetimedb/module`.
+3. Apply schema from `backend/spacetimedb/schema.sql` if your Maincloud flow requires explicit schema import.
+4. Store Maincloud endpoint + credentials in your deployment secret manager.
+5. Point your realtime clients/services at Maincloud endpoint.
+
+Notes:
+
+1. Gateway is already production-ready as the single-service authoritative runtime.
+2. Maincloud path is scaffolded and can be adopted when you split services.
 
 ## Thirdweb setup for Google + account creation
 
@@ -78,3 +105,17 @@ Set these in `backend/gateway/.env`:
 3. Build web bridge (`web/bridge`) and include script in WebGL template
 4. Build Unity WebGL and upload client
 5. (Optional) publish SpacetimeDB module to Maincloud
+
+## Leaderboard in deployed environment
+
+Leaderboard is available out of the box from gateway:
+
+1. `GET /leaderboard`
+2. `GET /leaderboard?limit=50&offset=0`
+
+Response includes:
+
+1. `total`
+2. `limit`
+3. `offset`
+4. ranked rows (`rank`, wallet, score, actions, owned tiles, updated timestamp)

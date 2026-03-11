@@ -47,6 +47,15 @@ public static class ActionCatalog
                 new Color(0.59f, 0.42f, 0.28f, 1f))
         },
         {
+            FiniteEarthActionType.BuildBarracks,
+            new ActionRuleSpec(
+                FiniteEarthActionType.BuildBarracks,
+                "Barracks",
+                new FiniteEarthResourcePool { wood = 2, food = 1, minerals = 1 },
+                default,
+                new Color(0.30f, 0.46f, 0.62f, 1f))
+        },
+        {
             FiniteEarthActionType.BuildIndustry,
             new ActionRuleSpec(
                 FiniteEarthActionType.BuildIndustry,
@@ -78,7 +87,7 @@ public static class ActionCatalog
             new ActionRuleSpec(
                 FiniteEarthActionType.Farm,
                 "Farm",
-                default,
+                new FiniteEarthResourcePool { wood = 1 },
                 new FiniteEarthResourcePool { food = 1 },
                 new Color(0.66f, 0.56f, 0.24f, 1f))
         },
@@ -108,6 +117,15 @@ public static class ActionCatalog
                 new FiniteEarthResourcePool { wood = 1, food = 1, minerals = 1 },
                 default,
                 new Color(0.36f, 0.60f, 0.52f, 1f))
+        },
+        {
+            FiniteEarthActionType.SpawnArmy,
+            new ActionRuleSpec(
+                FiniteEarthActionType.SpawnArmy,
+                "Train Army",
+                new FiniteEarthResourcePool { wood = 2, food = 5 },
+                default,
+                new Color(0.24f, 0.38f, 0.68f, 1f))
         },
         {
             FiniteEarthActionType.EndTurn,

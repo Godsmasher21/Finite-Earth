@@ -26,9 +26,15 @@ public class WalletSessionController : MonoBehaviour
     [SerializeField] private string gatewayBaseUrl = "http://localhost:8080";
     [SerializeField] private long chainId = 6342;
     [SerializeField] private string domain = "finite-earth.local";
+    [SerializeField] private bool useGatewayAuth = false;
     [SerializeField] private bool useDevelopmentAuthInEditor = true;
+    [SerializeField] private bool webGlDemoMode = false;
+    [SerializeField] private bool allowWebGlModeQueryOverride = true;
+    [SerializeField] private string modeQueryParam = "mode";
+    [SerializeField] private string demoQueryValue = "demo";
+    [SerializeField] private string multiplayerQueryValue = "multi";
     [SerializeField] private string defaultWebLoginStrategy = "google";
-    [SerializeField] private bool allowOfflineFallbackWhenGatewayUnavailable = true;
+    [SerializeField] private bool allowOfflineFallbackWhenGatewayUnavailable = false;
     [SerializeField] private bool allowGuestLogin = true;
     [SerializeField] private string guestWalletPrefix = "guest";
     [SerializeField] private string guestWalletPrefsKey = "finite-earth.guest-wallet";
@@ -39,8 +45,9 @@ public class WalletSessionController : MonoBehaviour
 
     public string WalletAddress { get; private set; }
     public string AccessToken { get; private set; }
-    public bool IsAuthenticated => !string.IsNullOrWhiteSpace(AccessToken);
+    public bool IsAuthenticated => !string.IsNullOrWhiteSpace(WalletAddress);
     public bool IsOfflineMode { get; private set; }
+    public bool IsRuntimeDemoMode { get; private set; }
 
     public event Action<string> AuthenticationSucceeded;
     public event Action<string> AuthenticationFailed;
@@ -51,6 +58,8 @@ public class WalletSessionController : MonoBehaviour
 
     private void Awake()
     {
+        ConfigureRuntimeMode();
+
         if (bridge == null)
         {
             bridge = FindAnyObjectByType<ThirdwebBridge>();
@@ -159,6 +168,13 @@ public class WalletSessionController : MonoBehaviour
         if (gameStateViewModel != null)
         {
             gameStateViewModel.SetWalletAddress(address);
+        }
+
+        if (!useGatewayAuth)
+        {
+            AccessToken = string.Empty;
+            AuthenticationSucceeded?.Invoke(string.Empty);
+            return;
         }
 
 #if UNITY_EDITOR
@@ -370,5 +386,94 @@ public class WalletSessionController : MonoBehaviour
             default:
                 return "google";
         }
+    }
+
+    private void ConfigureRuntimeMode()
+    {
+        bool baseForceOffline = forceOfflineMode;
+        bool useDemoMode = webGlDemoMode;
+        bool explicitMultiplayerRequested = false;
+
+#if UNITY_WEBGL && !UNITY_EDITOR
+        // Full version should be the default in builds; demo mode must be explicit via query.
+        useDemoMode = false;
+#endif
+
+        if (allowWebGlModeQueryOverride && TryReadQueryParam(Application.absoluteURL, modeQueryParam, out string modeValue))
+        {
+            if (string.Equals(modeValue, demoQueryValue, StringComparison.OrdinalIgnoreCase))
+            {
+                useDemoMode = true;
+            }
+            else if (string.Equals(modeValue, multiplayerQueryValue, StringComparison.OrdinalIgnoreCase)
+                || string.Equals(modeValue, "online", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(modeValue, "multiplayer", StringComparison.OrdinalIgnoreCase))
+            {
+                useDemoMode = false;
+                explicitMultiplayerRequested = true;
+            }
+        }
+
+        IsRuntimeDemoMode = useDemoMode;
+
+        if (IsRuntimeDemoMode)
+        {
+            forceOfflineMode = true;
+            allowOfflineMode = true;
+            allowOfflineFallbackWhenGatewayUnavailable = true;
+            allowGuestLogin = false;
+            return;
+        }
+
+        if (explicitMultiplayerRequested)
+        {
+            forceOfflineMode = false;
+            return;
+        }
+
+        forceOfflineMode = baseForceOffline;
+    }
+
+    private static bool TryReadQueryParam(string absoluteUrl, string key, out string value)
+    {
+        value = string.Empty;
+        if (string.IsNullOrWhiteSpace(absoluteUrl) || string.IsNullOrWhiteSpace(key))
+        {
+            return false;
+        }
+
+        int queryIndex = absoluteUrl.IndexOf('?');
+        if (queryIndex < 0 || queryIndex >= absoluteUrl.Length - 1)
+        {
+            return false;
+        }
+
+        string query = absoluteUrl.Substring(queryIndex + 1);
+        string[] parts = query.Split('&');
+        for (int i = 0; i < parts.Length; i++)
+        {
+            string part = parts[i];
+            if (string.IsNullOrWhiteSpace(part))
+            {
+                continue;
+            }
+
+            int equalsIndex = part.IndexOf('=');
+            string rawKey = equalsIndex >= 0 ? part.Substring(0, equalsIndex) : part;
+            string decodedKey = Uri.UnescapeDataString(rawKey);
+            if (!string.Equals(decodedKey, key, StringComparison.OrdinalIgnoreCase))
+            {
+                continue;
+            }
+
+            string rawValue = equalsIndex >= 0 && equalsIndex < part.Length - 1
+                ? part.Substring(equalsIndex + 1)
+                : string.Empty;
+
+            value = Uri.UnescapeDataString(rawValue).Trim();
+            return !string.IsNullOrWhiteSpace(value);
+        }
+
+        return false;
     }
 }

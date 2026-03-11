@@ -34,6 +34,11 @@ public class GameStateViewModel : MonoBehaviour
             globalCarbonToken = worldQuery != null ? worldQuery.CalculateCarbonScore() : 0
         };
 
+        WorldState.initialForest = WorldState.globalForestToken;
+        int initialCarbon = WorldState.globalCarbonToken;
+        WorldState.carbonCap = Mathf.Max(1, Mathf.RoundToInt(initialCarbon * 1.25f));
+        WorldState.ecosystemScore = ComputeEcosystemScore(WorldState.globalForestToken, WorldState.globalCarbonToken, WorldState.initialForest, WorldState.carbonCap);
+
         PlayerState = new PlayerState
         {
             walletAddress = walletAddress,
@@ -41,6 +46,16 @@ public class GameStateViewModel : MonoBehaviour
             ownedTilesCount = worldQuery != null ? worldQuery.GetOwnedCount(walletAddress) : 0,
             resources = startingResources
         };
+    }
+
+    public static int ComputeEcosystemScore(int forest, int carbon, int forestMax, int carbonCap)
+    {
+        float safeForestMax = Mathf.Max(1f, forestMax);
+        float safeCarbonCap = Mathf.Max(1f, carbonCap);
+        float f = Mathf.Clamp01(forest / safeForestMax);
+        float c = Mathf.Clamp01(carbon / safeCarbonCap);
+        float score = 100f * (0.65f * f + 0.35f * (1f - c));
+        return Mathf.RoundToInt(Mathf.Clamp(score, 0f, 100f));
     }
 
     public void SetWalletAddress(string address)

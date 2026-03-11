@@ -63,6 +63,11 @@ public sealed class UnityWorldAdapter : IResolverWorldQuery, IResolverWorldMutat
         return worldGenerator != null && worldGenerator.HasAdjacentTerrainType(coord.ToVector3Int(), requiredType);
     }
 
+    public bool HasTerrainTypeWithinRadius(HexCoord coord, TileType requiredType, int radius)
+    {
+        return worldGenerator != null && worldGenerator.HasTerrainTypeWithinRadius(coord.ToVector3Int(), requiredType, radius);
+    }
+
     public int GetOwnedCount(string walletAddress)
     {
         return ownership != null ? ownership.GetOwnedCount() : 0;
@@ -76,6 +81,11 @@ public sealed class UnityWorldAdapter : IResolverWorldQuery, IResolverWorldMutat
     public int CalculateCarbonScore()
     {
         return worldGenerator != null ? worldGenerator.CalculateCarbonScore() : 0;
+    }
+
+    public int GetMiningCount(HexCoord coord)
+    {
+        return worldGenerator != null ? worldGenerator.GetMiningCount(coord.ToVector3Int()) : 0;
     }
 
     public void SetOwned(HexCoord coord, string walletAddress, bool isOwned)

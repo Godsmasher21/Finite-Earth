@@ -188,6 +188,7 @@ public class ActionInputController : MonoBehaviour
         if (keyboard.digit7Key.wasPressedThisFrame) ActionHotkeyPressed?.Invoke(FiniteEarthActionType.Irrigate);
         if (keyboard.digit8Key.wasPressedThisFrame) ActionHotkeyPressed?.Invoke(FiniteEarthActionType.Mine);
         if (keyboard.digit9Key.wasPressedThisFrame) ActionHotkeyPressed?.Invoke(FiniteEarthActionType.Restore);
+        if (keyboard.digit0Key.wasPressedThisFrame) ActionHotkeyPressed?.Invoke(FiniteEarthActionType.SpawnArmy);
     }
 
     private static bool IsPointerOverUi()

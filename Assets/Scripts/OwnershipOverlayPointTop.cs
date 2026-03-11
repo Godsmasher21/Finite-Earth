@@ -18,8 +18,8 @@ public class OwnershipOverlayPointTop : MonoBehaviour
     [Header("Selection Layer")]
     [SerializeField] private Tilemap selectionTilemap;
     [SerializeField] private TileBase selectionTile;
-    [SerializeField] private Color selectedTint = new Color(0.98f, 0.86f, 0.35f, 0.72f);
-    [SerializeField] private float selectionPulseSpeed = 4f;
+    [SerializeField] private Color selectedTint = new Color(1.00f, 0.82f, 0.18f, 1.00f);
+    [SerializeField] private float selectionPulseSpeed = 3.2f;
 
     [Header("Map Size (syncs from generator)")]
     [SerializeField] private int width = 24;
@@ -27,11 +27,12 @@ public class OwnershipOverlayPointTop : MonoBehaviour
 
     [Header("Owned Visual")]
     [SerializeField] private bool useTerrainShapeForOwnedOverlay = true;
-    [SerializeField] private Color ownedTint = new Color(0.15f, 0.36f, 0.28f, 0.32f);
+    [SerializeField] private Color ownedTint = new Color(0.04f, 0.62f, 0.96f, 0.26f);
     [SerializeField] private bool multiplyOwnedTileByTint = false;
     [SerializeField] private bool enforceHighContrastOwnedOverlay = true;
-    [SerializeField] private Color highContrastOwnedTint = new Color(0.96f, 0.82f, 0.22f, 0.70f);
-    [SerializeField] private bool preferDedicatedOwnedTileVisual = true;
+    [SerializeField] private Color highContrastOwnedTint = new Color(0.08f, 0.72f, 1.00f, 0.44f);
+    [SerializeField] private bool preferDedicatedOwnedTileVisual = false;
+    [SerializeField] private bool enforceReadableOverlayTheme = true;
 
     [Header("Starting Territory")]
     [SerializeField] private bool createStartingTerritory = true;
@@ -55,6 +56,7 @@ public class OwnershipOverlayPointTop : MonoBehaviour
             worldGenerator = FindAnyObjectByType<HexWorldGeneratorTilemap>();
         }
 
+        ApplyReadableOverlayTheme();
         Initialize(worldGenerator);
     }
 
@@ -76,6 +78,7 @@ public class OwnershipOverlayPointTop : MonoBehaviour
 
     public void Initialize(HexWorldGeneratorTilemap generator)
     {
+        ApplyReadableOverlayTheme();
         worldGenerator = generator;
         EnsureOverlayLayers();
         EnsureOwnedTileReference();
@@ -436,6 +439,14 @@ public class OwnershipOverlayPointTop : MonoBehaviour
         {
             selectionTilemap = EnsureOverlayLayer("SelectionOverlay", selectionSortingOrder);
         }
+
+        if (selectionTile == null)
+        {
+            Tile runtimeSelectionTile = ScriptableObject.CreateInstance<Tile>();
+            runtimeSelectionTile.sprite = BuildHexOutlineSprite(44, 4);
+            runtimeSelectionTile.color = Color.white;
+            selectionTile = runtimeSelectionTile;
+        }
     }
 
     private Tilemap EnsureOverlayLayer(string layerName, int sortingOrder)
@@ -471,12 +482,7 @@ public class OwnershipOverlayPointTop : MonoBehaviour
 
     private TileBase ResolveOwnedOverlayTile(Vector3Int cell)
     {
-        if (preferDedicatedOwnedTileVisual && ownedTile != null)
-        {
-            return ownedTile;
-        }
-
-        if (worldGenerator != null && worldGenerator.TerrainTilemap != null)
+        if (useTerrainShapeForOwnedOverlay && worldGenerator != null && worldGenerator.TerrainTilemap != null)
         {
             TileBase terrainTile = worldGenerator.TerrainTilemap.GetTile(cell);
 
@@ -487,6 +493,11 @@ public class OwnershipOverlayPointTop : MonoBehaviour
         }
 
         if (!useTerrainShapeForOwnedOverlay && ownedTile != null)
+        {
+            return ownedTile;
+        }
+
+        if (preferDedicatedOwnedTileVisual && ownedTile != null)
         {
             return ownedTile;
         }
@@ -527,7 +538,11 @@ public class OwnershipOverlayPointTop : MonoBehaviour
     {
         if (selectionTile != null)
         {
-            return new Color(1f, 1f, 1f, Mathf.Clamp01(selectedTint.a * pulse));
+            return new Color(
+                selectedTint.r,
+                selectedTint.g,
+                selectedTint.b,
+                Mathf.Clamp01(selectedTint.a * pulse));
         }
 
         Color color = selectedTint;
@@ -572,5 +587,50 @@ public class OwnershipOverlayPointTop : MonoBehaviour
         {
             ownedTile = worldGenerator.FallbackTile;
         }
+    }
+
+    private void ApplyReadableOverlayTheme()
+    {
+        if (!enforceReadableOverlayTheme)
+        {
+            return;
+        }
+
+        useTerrainShapeForOwnedOverlay = true;
+        preferDedicatedOwnedTileVisual = false;
+        enforceHighContrastOwnedOverlay = true;
+        ownedTint = new Color(0.04f, 0.62f, 0.96f, 0.26f);
+        highContrastOwnedTint = new Color(0.08f, 0.72f, 1.00f, 0.44f);
+        selectedTint = new Color(1.00f, 0.82f, 0.18f, 1.00f);
+    }
+
+    private static Sprite BuildHexOutlineSprite(int size, int thickness)
+    {
+        Texture2D tex = new Texture2D(size, size, TextureFormat.ARGB32, false);
+        tex.filterMode = FilterMode.Point;
+        Color clear = new Color(0f, 0f, 0f, 0f);
+        Color white = new Color(1f, 1f, 1f, 1f);
+        Vector2 center = new Vector2((size - 1) * 0.5f, (size - 1) * 0.5f);
+        float outerRadius = size * 0.47f;
+        float innerRadius = outerRadius - Mathf.Max(1f, thickness);
+
+        for (int y = 0; y < size; y++)
+        {
+            for (int x = 0; x < size; x++)
+            {
+                float dx = Mathf.Abs(x - center.x);
+                float dy = Mathf.Abs(y - center.y);
+                float angle = Mathf.Atan2(dy, dx);
+                float outerMax = outerRadius * Mathf.Cos(Mathf.PI / 6f) / Mathf.Cos(Mathf.Repeat(angle, Mathf.PI / 3f) - Mathf.PI / 6f);
+                float innerMax = innerRadius * Mathf.Cos(Mathf.PI / 6f) / Mathf.Cos(Mathf.Repeat(angle, Mathf.PI / 3f) - Mathf.PI / 6f);
+                float dist = Mathf.Sqrt(dx * dx + dy * dy);
+                bool insideOuter = dist <= outerMax;
+                bool insideInner = dist <= innerMax;
+                tex.SetPixel(x, y, insideOuter && !insideInner ? white : clear);
+            }
+        }
+
+        tex.Apply();
+        return Sprite.Create(tex, new Rect(0, 0, size, size), new Vector2(0.5f, 0.5f), size);
     }
 }

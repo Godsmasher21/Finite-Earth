@@ -14,6 +14,9 @@ public sealed class WorldState
     public int globalForestToken;
     public int globalCarbonToken;
     public int rngSeed;
+    public int initialForest;
+    public int carbonCap;
+    public int ecosystemScore;
     public IResolverWorldQuery query;
 }
 
@@ -27,6 +30,14 @@ public sealed class PlayerState
     public int actionsRemaining = 3;
     public long lastClientSeq;
     public FiniteEarthResourcePool resources;
+    public int researchPoints;
+    public bool techBasicForestry;
+    public bool techRenewableEnergy;
+    public bool techCarbonCapture;
+    public int ecoActions;
+    public int industrialActions;
+    public int agricultureActions;
+    public string reputationLabel = "Balanced";
 }
 
 [Serializable]

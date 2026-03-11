@@ -11,6 +11,10 @@
 [Rr]ecordings/
 [Uu]ser[Ss]ettings/
 tmp_pdf_images2/
+Assets/Feel/
+Assets/Feel.meta
+Assets/Retro Arsenal/
+Assets/Retro Arsenal.meta
 
 # Generated Unity/IDE files
 *.csproj

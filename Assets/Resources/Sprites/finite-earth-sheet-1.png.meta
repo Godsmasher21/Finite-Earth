@@ -1,0 +1,2782 @@
+fileFormatVersion: 2
+guid: 1ba3051086c866341a606c7d5dec7237
+TextureImporter:
+  internalIDToNameTable:
+  - first:
+      213: 6090229868203680932
+    second: finite-earth-sheet-1_0
+  - first:
+      213: 3057853507595279131
+    second: finite-earth-sheet-1_1
+  - first:
+      213: 5725839690488325528
+    second: finite-earth-sheet-1_2
+  - first:
+      213: 3463200720284241640
+    second: finite-earth-sheet-1_3
+  - first:
+      213: 3627039402203826410
+    second: finite-earth-sheet-1_4
+  - first:
+      213: 4931989181628497370
+    second: finite-earth-sheet-1_5
+  - first:
+      213: -7894406641936652793
+    second: finite-earth-sheet-1_6
+  - first:
+      213: -4869405112411645328
+    second: finite-earth-sheet-1_7
+  - first:
+      213: 578807128554051325
+    second: finite-earth-sheet-1_8
+  - first:
+      213: 3845373570773601743
+    second: finite-earth-sheet-1_9
+  - first:
+      213: 536683837209979678
+    second: finite-earth-sheet-1_10
+  - first:
+      213: -8140733354190010328
+    second: finite-earth-sheet-1_11
+  - first:
+      213: -2916510925190661335
+    second: finite-earth-sheet-1_12
+  - first:
+      213: 5554125161294997326
+    second: finite-earth-sheet-1_13
+  - first:
+      213: -787909630006816198
+    second: finite-earth-sheet-1_14
+  - first:
+      213: 7568316067118195157
+    second: finite-earth-sheet-1_15
+  - first:
+      213: 8523886949787369788
+    second: finite-earth-sheet-1_16
+  - first:
+      213: -7686790565074981920
+    second: finite-earth-sheet-1_17
+  - first:
+      213: 5484257449035687141
+    second: finite-earth-sheet-1_18
+  - first:
+      213: -9015834800000040435
+    second: finite-earth-sheet-1_19
+  - first:
+      213: -4094464211915164502
+    second: finite-earth-sheet-1_20
+  - first:
+      213: -1448126666572716030
+    second: finite-earth-sheet-1_21
+  - first:
+      213: 6349466594835147845
+    second: finite-earth-sheet-1_22
+  - first:
+      213: 6091719733619029056
+    second: finite-earth-sheet-1_23
+  - first:
+      213: -2913820549183993872
+    second: finite-earth-sheet-1_24
+  - first:
+      213: 4954560008699910420
+    second: finite-earth-sheet-1_25
+  - first:
+      213: -4876129624128406968
+    second: finite-earth-sheet-1_26
+  - first:
+      213: 4048763075817437941
+    second: finite-earth-sheet-1_27
+  - first:
+      213: -4893080534842843990
+    second: finite-earth-sheet-1_28
+  - first:
+      213: -7373674620602272745
+    second: finite-earth-sheet-1_29
+  - first:
+      213: -4273676952955652749
+    second: finite-earth-sheet-1_30
+  - first:
+      213: 653565790564689490
+    second: finite-earth-sheet-1_31
+  - first:
+      213: 2798563278109385839
+    second: finite-earth-sheet-1_32
+  - first:
+      213: -2880797049335358991
+    second: finite-earth-sheet-1_33
+  - first:
+      213: -7976809347917675755
+    second: finite-earth-sheet-1_34
+  - first:
+      213: -4844873585779520948
+    second: finite-earth-sheet-1_35
+  - first:
+      213: 1396002368992065267
+    second: finite-earth-sheet-1_36
+  - first:
+      213: 4872223596597482735
+    second: finite-earth-sheet-1_37
+  - first:
+      213: 7679507846426442026
+    second: finite-earth-sheet-1_38
+  - first:
+      213: 4047042825088924429
+    second: finite-earth-sheet-1_39
+  - first:
+      213: 7148614109051913837
+    second: finite-earth-sheet-1_40
+  - first:
+      213: -1074802881868935666
+    second: finite-earth-sheet-1_41
+  - first:
+      213: 1090603833664298249
+    second: finite-earth-sheet-1_42
+  - first:
+      213: 3970644444082456642
+    second: finite-earth-sheet-1_43
+  - first:
+      213: -6641063582164476603
+    second: finite-earth-sheet-1_44
+  - first:
+      213: 4230055940414382142
+    second: finite-earth-sheet-1_45
+  - first:
+      213: -2166790436152143628
+    second: finite-earth-sheet-1_46
+  - first:
+      213: 4116494435823227044
+    second: finite-earth-sheet-1_47
+  - first:
+      213: -818834698398539961
+    second: finite-earth-sheet-1_48
+  - first:
+      213: -594851844449946506
+    second: finite-earth-sheet-1_49
+  - first:
+      213: 5806287696210567082
+    second: finite-earth-sheet-1_50
+  - first:
+      213: 2481912210037543714
+    second: finite-earth-sheet-1_51
+  - first:
+      213: 8855410757827079624
+    second: finite-earth-sheet-1_52
+  - first:
+      213: -9009999706888563177
+    second: finite-earth-sheet-1_53
+  - first:
+      213: -8919319838873419379
+    second: finite-earth-sheet-1_54
+  - first:
+      213: 9013368324913618560
+    second: finite-earth-sheet-1_55
+  - first:
+      213: 1423404910730982579
+    second: finite-earth-sheet-1_56
+  - first:
+      213: -7527852150484541445
+    second: finite-earth-sheet-1_57
+  - first:
+      213: 6923091435570483239
+    second: finite-earth-sheet-1_58
+  - first:
+      213: 7552175413379972186
+    second: finite-earth-sheet-1_59
+  - first:
+      213: -5945665215023031287
+    second: finite-earth-sheet-1_60
+  - first:
+      213: 8679585351697472920
+    second: finite-earth-sheet-1_61
+  - first:
+      213: -5529575776144723322
+    second: finite-earth-sheet-1_62
+  - first:
+      213: 7017061284397879836
+    second: finite-earth-sheet-1_63
+  - first:
+      213: -6690312648939342597
+    second: finite-earth-sheet-1_64
+  - first:
+      213: 1133662257854423733
+    second: finite-earth-sheet-1_65
+  - first:
+      213: 7407853954120537430
+    second: finite-earth-sheet-1_66
+  - first:
+      213: -2886078542902526398
+    second: finite-earth-sheet-1_67
+  - first:
+      213: 8260788187134391035
+    second: finite-earth-sheet-1_68
+  - first:
+      213: 6531868410558266254
+    second: finite-earth-sheet-1_69
+  - first:
+      213: 2805504878484044596
+    second: finite-earth-sheet-1_70
+  - first:
+      213: -7360513853736992761
+    second: finite-earth-sheet-1_71
+  - first:
+      213: -8191128610162475361
+    second: finite-earth-sheet-1_72
+  - first:
+      213: -767797356924526297
+    second: finite-earth-sheet-1_73
+  - first:
+      213: -3724501407093832533
+    second: finite-earth-sheet-1_74
+  - first:
+      213: 5320720404193787463
+    second: finite-earth-sheet-1_75
+  - first:
+      213: 9053486601287274584
+    second: finite-earth-sheet-1_76
+  - first:
+      213: 1668231515317909907
+    second: finite-earth-sheet-1_77
+  - first:
+      213: 4038898935743000586
+    second: finite-earth-sheet-1_78
+  - first:
+      213: 313492607522130686
+    second: finite-earth-sheet-1_79
+  - first:
+      213: 6575764112769537428
+    second: finite-earth-sheet-1_80
+  - first:
+      213: 1378717446505097056
+    second: finite-earth-sheet-1_81
+  - first:
+      213: 6775607543442303559
+    second: finite-earth-sheet-1_82
+  - first:
+      213: -4353881486231524399
+    second: finite-earth-sheet-1_83
+  - first:
+      213: 4090808903138750495
+    second: finite-earth-sheet-1_84
+  - first:
+      213: 1200124254963230089
+    second: finite-earth-sheet-1_85
+  - first:
+      213: -40844861137618820
+    second: finite-earth-sheet-1_86
+  - first:
+      213: 3649482694242863711
+    second: finite-earth-sheet-1_87
+  - first:
+      213: -5931702403038597964
+    second: finite-earth-sheet-1_88
+  - first:
+      213: 2945553050254641138
+    second: finite-earth-sheet-1_89
+  - first:
+      213: -8949400309132980829
+    second: finite-earth-sheet-1_90
+  - first:
+      213: -1702673498456207111
+    second: finite-earth-sheet-1_91
+  - first:
+      213: -2877211784674709241
+    second: finite-earth-sheet-1_92
+  - first:
+      213: -988042949674033228
+    second: finite-earth-sheet-1_93
+  - first:
+      213: 8725020639143926233
+    second: finite-earth-sheet-1_94
+  - first:
+      213: 2893704342070401367
+    second: finite-earth-sheet-1_95
+  - first:
+      213: 2739413413079917335
+    second: finite-earth-sheet-1_96
+  - first:
+      213: -3219570643771974221
+    second: finite-earth-sheet-1_97
+  - first:
+      213: -8597813232821545117
+    second: finite-earth-sheet-1_98
+  - first:
+      213: -4366366398234222665
+    second: finite-earth-sheet-1_99
+  - first:
+      213: -7182822646539793290
+    second: finite-earth-sheet-1_100
+  - first:
+      213: -2877432025078656276
+    second: finite-earth-sheet-1_101
+  externalObjects: {}
+  serializedVersion: 13
+  mipmaps:
+    mipMapMode: 0
+    enableMipMap: 0
+    sRGBTexture: 1
+    linearTexture: 0
+    fadeOut: 0
+    borderMipMap: 0
+    mipMapsPreserveCoverage: 0
+    alphaTestReferenceValue: 0.5
+    mipMapFadeDistanceStart: 1
+    mipMapFadeDistanceEnd: 3
+  bumpmap:
+    convertToNormalMap: 0
+    externalNormalMap: 0
+    heightScale: 0.25
+    normalMapFilter: 0
+    flipGreenChannel: 0
+  isReadable: 0
+  streamingMipmaps: 0
+  streamingMipmapsPriority: 0
+  vTOnly: 0
+  ignoreMipmapLimit: 0
+  grayScaleToAlpha: 0
+  generateCubemap: 6
+  cubemapConvolution: 0
+  seamlessCubemap: 0
+  textureFormat: 1
+  maxTextureSize: 2048
+  textureSettings:
+    serializedVersion: 2
+    filterMode: 1
+    aniso: 1
+    mipBias: 0
+    wrapU: 1
+    wrapV: 1
+    wrapW: 1
+  nPOTScale: 0
+  lightmap: 0
+  compressionQuality: 50
+  spriteMode: 2
+  spriteExtrude: 1
+  spriteMeshType: 1
+  alignment: 0
+  spritePivot: {x: 0.5, y: 0.5}
+  spritePixelsToUnits: 32
+  spriteBorder: {x: 0, y: 0, z: 0, w: 0}
+  spriteGenerateFallbackPhysicsShape: 1
+  alphaUsage: 1
+  alphaIsTransparency: 1
+  spriteTessellationDetail: -1
+  textureType: 8
+  textureShape: 1
+  singleChannelComponent: 0
+  flipbookRows: 1
+  flipbookColumns: 1
+  maxTextureSizeSet: 0
+  compressionQualitySet: 0
+  textureFormatSet: 0
+  ignorePngGamma: 0
+  applyGammaDecoding: 0
+  swizzle: 50462976
+  cookieLightType: 0
+  platformSettings:
+  - serializedVersion: 4
+    buildTarget: DefaultTexturePlatform
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Standalone
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: WebGL
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  spriteSheet:
+    serializedVersion: 2
+    sprites:
+    - serializedVersion: 2
+      name: finite-earth-sheet-1_0
+      rect:
+        serializedVersion: 2
+        x: 4
+        y: 228
+        width: 25
+        height: 23
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 4a421c63cc7d48450800000000000000
+      internalID: 6090229868203680932
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: finite-earth-sheet-1_1
+      rect:
+        serializedVersion: 2
+        x: 36
+        y: 229
+        width: 24
+        height: 22
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: b1b166f509daf6a20800000000000000
+      internalID: 3057853507595279131
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: finite-earth-sheet-1_2
+      rect:
+        serializedVersion: 2
+        x: 69
+        y: 228
+        width: 22
+        height: 20
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 895a3689cd4467f40800000000000000
+      internalID: 5725839690488325528
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: finite-earth-sheet-1_3
+      rect:
+        serializedVersion: 2
+        x: 100
+        y: 228
+        width: 24
+        height: 23
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 8ee4b6ec4b2cf0030800000000000000
+      internalID: 3463200720284241640
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: finite-earth-sheet-1_4
+      rect:
+        serializedVersion: 2
+        x: 131
+        y: 244
+        width: 13
+        height: 6
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: ae844b29e15d55230800000000000000
+      internalID: 3627039402203826410
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: finite-earth-sheet-1_5
+      rect:
+        serializedVersion: 2
+        x: 132
+        y: 240
+        width: 26
+        height: 13
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: add3907a702f17440800000000000000
+      internalID: 4931989181628497370
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: finite-earth-sheet-1_6
+      rect:
+        serializedVersion: 2
+        x: 163
+        y: 228
+        width: 26
+        height: 24
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 706a1ea4cfe617290800000000000000
+      internalID: -7894406641936652793
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: finite-earth-sheet-1_7
+      rect:
+        serializedVersion: 2
+        x: 195
+        y: 228
+        width: 25
+        height: 19
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 07a9b3779d56c6cb0800000000000000
+      internalID: -4869405112411645328
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: finite-earth-sheet-1_8
+      rect:
+        serializedVersion: 2
+        x: 227
+        y: 228
+        width: 25
+        height: 23
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: df69dea4406580800800000000000000
+      internalID: 578807128554051325
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: finite-earth-sheet-1_9
+      rect:
+        serializedVersion: 2
+        x: 131
+        y: 229
+        width: 15
+        height: 12
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: fcdc2a293e28d5530800000000000000
+      internalID: 3845373570773601743
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: finite-earth-sheet-1_10
+      rect:
+        serializedVersion: 2
+        x: 145
+        y: 230
+        width: 10
+        height: 11
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: e1b28914b1fa27700800000000000000
+      internalID: 536683837209979678
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: finite-earth-sheet-1_11
+      rect:
+        serializedVersion: 2
+        x: 5
+        y: 197
+        width: 24
+        height: 22
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 8288454552e460f80800000000000000
+      internalID: -8140733354190010328
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: finite-earth-sheet-1_12
+      rect:
+        serializedVersion: 2
+        x: 36
+        y: 198
+        width: 24
+        height: 22
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 92bf67014c87687d0800000000000000
+      internalID: -2916510925190661335
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: finite-earth-sheet-1_13
+      rect:
+        serializedVersion: 2
+        x: 68
+        y: 197
+        width: 24
+        height: 24
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: e472c0d3867341d40800000000000000
+      internalID: 5554125161294997326
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: finite-earth-sheet-1_14
+      rect:
+        serializedVersion: 2
+        x: 100
+        y: 197
+        width: 24
+        height: 24
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: a329554bd58c015f0800000000000000
+      internalID: -787909630006816198
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: finite-earth-sheet-1_15
+      rect:
+        serializedVersion: 2
+        x: 131
+        y: 197
+        width: 26
+        height: 25
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 5d126784d5f080960800000000000000
+      internalID: 7568316067118195157
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: finite-earth-sheet-1_16
+      rect:
+        serializedVersion: 2
+        x: 163
+        y: 197
+        width: 25
+        height: 25
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: c310aa3f40eea4670800000000000000
+      internalID: 8523886949787369788
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: finite-earth-sheet-1_17
+      rect:
+        serializedVersion: 2
+        x: 195
+        y: 197
+        width: 25
+        height: 20
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 0eba1e915b8035590800000000000000
+      internalID: -7686790565074981920
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: finite-earth-sheet-1_18
+      rect:
+        serializedVersion: 2
+        x: 227
+        y: 197
+        width: 25
+        height: 24
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 5e4ef82d71ffb1c40800000000000000
+      internalID: 5484257449035687141
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: finite-earth-sheet-1_19
+      rect:
+        serializedVersion: 2
+        x: 4
+        y: 167
+        width: 25
+        height: 23
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: d028460740251e280800000000000000
+      internalID: -9015834800000040435
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: finite-earth-sheet-1_20
+      rect:
+        serializedVersion: 2
+        x: 36
+        y: 166
+        width: 24
+        height: 23
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: aa43f3f1e7a8d27c0800000000000000
+      internalID: -4094464211915164502
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: finite-earth-sheet-1_21
+      rect:
+        serializedVersion: 2
+        x: 68
+        y: 168
+        width: 24
+        height: 22
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 208a921287837ebe0800000000000000
+      internalID: -1448126666572716030
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: finite-earth-sheet-1_22
+      rect:
+        serializedVersion: 2
+        x: 100
+        y: 166
+        width: 24
+        height: 24
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 54cab522a36dd1850800000000000000
+      internalID: 6349466594835147845
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: finite-earth-sheet-1_23
+      rect:
+        serializedVersion: 2
+        x: 132
+        y: 166
+        width: 24
+        height: 25
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 044799982d22a8450800000000000000
+      internalID: 6091719733619029056
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: finite-earth-sheet-1_24
+      rect:
+        serializedVersion: 2
+        x: 163
+        y: 166
+        width: 25
+        height: 22
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 0f787aa06a70097d0800000000000000
+      internalID: -2913820549183993872
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: finite-earth-sheet-1_25
+      rect:
+        serializedVersion: 2
+        x: 195
+        y: 166
+        width: 25
+        height: 26
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 4191ae8d31222c440800000000000000
+      internalID: 4954560008699910420
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: finite-earth-sheet-1_26
+      rect:
+        serializedVersion: 2
+        x: 227
+        y: 166
+        width: 25
+        height: 26
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 84a311311f1845cb0800000000000000
+      internalID: -4876129624128406968
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: finite-earth-sheet-1_27
+      rect:
+        serializedVersion: 2
+        x: 6
+        y: 135
+        width: 22
+        height: 25
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 5faf0d1f098103830800000000000000
+      internalID: 4048763075817437941
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: finite-earth-sheet-1_28
+      rect:
+        serializedVersion: 2
+        x: 38
+        y: 135
+        width: 22
+        height: 25
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: aac505f9d29481cb0800000000000000
+      internalID: -4893080534842843990
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: finite-earth-sheet-1_29
+      rect:
+        serializedVersion: 2
+        x: 69
+        y: 135
+        width: 23
+        height: 25
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 71430bdfff17ba990800000000000000
+      internalID: -7373674620602272745
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: finite-earth-sheet-1_30
+      rect:
+        serializedVersion: 2
+        x: 101
+        y: 135
+        width: 22
+        height: 25
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 375fd464479d0b4c0800000000000000
+      internalID: -4273676952955652749
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: finite-earth-sheet-1_31
+      rect:
+        serializedVersion: 2
+        x: 132
+        y: 135
+        width: 23
+        height: 25
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 256a4ffaf9ee11900800000000000000
+      internalID: 653565790564689490
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: finite-earth-sheet-1_32
+      rect:
+        serializedVersion: 2
+        x: 164
+        y: 135
+        width: 22
+        height: 25
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: f64a929597e76d620800000000000000
+      internalID: 2798563278109385839
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: finite-earth-sheet-1_33
+      rect:
+        serializedVersion: 2
+        x: 194
+        y: 129
+        width: 28
+        height: 7
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 1f95f54c85a5508d0800000000000000
+      internalID: -2880797049335358991
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: finite-earth-sheet-1_34
+      rect:
+        serializedVersion: 2
+        x: 195
+        y: 136
+        width: 25
+        height: 24
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 5130a58392eac4190800000000000000
+      internalID: -7976809347917675755
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: finite-earth-sheet-1_35
+      rect:
+        serializedVersion: 2
+        x: 225
+        y: 129
+        width: 30
+        height: 7
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: c4a40f9942d83ccb0800000000000000
+      internalID: -4844873585779520948
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: finite-earth-sheet-1_36
+      rect:
+        serializedVersion: 2
+        x: 227
+        y: 136
+        width: 25
+        height: 24
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 3f6306d12c89f5310800000000000000
+      internalID: 1396002368992065267
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: finite-earth-sheet-1_37
+      rect:
+        serializedVersion: 2
+        x: 4
+        y: 104
+        width: 25
+        height: 25
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: fe418750c8d9d9340800000000000000
+      internalID: 4872223596597482735
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: finite-earth-sheet-1_38
+      rect:
+        serializedVersion: 2
+        x: 36
+        y: 104
+        width: 24
+        height: 25
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: a29b214d2b7139a60800000000000000
+      internalID: 7679507846426442026
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: finite-earth-sheet-1_39
+      rect:
+        serializedVersion: 2
+        x: 68
+        y: 104
+        width: 24
+        height: 24
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: d0bf73cd10cf92830800000000000000
+      internalID: 4047042825088924429
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: finite-earth-sheet-1_40
+      rect:
+        serializedVersion: 2
+        x: 100
+        y: 104
+        width: 24
+        height: 20
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: d66826e38aaf43360800000000000000
+      internalID: 7148614109051913837
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: finite-earth-sheet-1_41
+      rect:
+        serializedVersion: 2
+        x: 132
+        y: 104
+        width: 24
+        height: 25
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: e0ec2a639788511f0800000000000000
+      internalID: -1074802881868935666
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: finite-earth-sheet-1_42
+      rect:
+        serializedVersion: 2
+        x: 163
+        y: 103
+        width: 25
+        height: 26
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 90d5d30986a922f00800000000000000
+      internalID: 1090603833664298249
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: finite-earth-sheet-1_43
+      rect:
+        serializedVersion: 2
+        x: 196
+        y: 105
+        width: 16
+        height: 23
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 248c9e2a5109a1730800000000000000
+      internalID: 3970644444082456642
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: finite-earth-sheet-1_44
+      rect:
+        serializedVersion: 2
+        x: 208
+        y: 106
+        width: 13
+        height: 21
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 54d9d4e9bd336d3a0800000000000000
+      internalID: -6641063582164476603
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: finite-earth-sheet-1_45
+      rect:
+        serializedVersion: 2
+        x: 229
+        y: 105
+        width: 23
+        height: 23
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: e302e6c477d24ba30800000000000000
+      internalID: 4230055940414382142
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: finite-earth-sheet-1_46
+      rect:
+        serializedVersion: 2
+        x: 5
+        y: 75
+        width: 15
+        height: 22
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 4f0107614930ee1e0800000000000000
+      internalID: -2166790436152143628
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: finite-earth-sheet-1_47
+      rect:
+        serializedVersion: 2
+        x: 16
+        y: 75
+        width: 13
+        height: 21
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 4a09d1711e9b02930800000000000000
+      internalID: 4116494435823227044
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: finite-earth-sheet-1_48
+      rect:
+        serializedVersion: 2
+        x: 36
+        y: 74
+        width: 24
+        height: 23
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 74fd0302e2ae2a4f0800000000000000
+      internalID: -818834698398539961
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: finite-earth-sheet-1_49
+      rect:
+        serializedVersion: 2
+        x: 68
+        y: 75
+        width: 25
+        height: 23
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 674339d2669aeb7f0800000000000000
+      internalID: -594851844449946506
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: finite-earth-sheet-1_50
+      rect:
+        serializedVersion: 2
+        x: 101
+        y: 75
+        width: 23
+        height: 22
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: aaf1a5c85e3149050800000000000000
+      internalID: 5806287696210567082
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: finite-earth-sheet-1_51
+      rect:
+        serializedVersion: 2
+        x: 130
+        y: 74
+        width: 28
+        height: 24
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 2231efa5106817220800000000000000
+      internalID: 2481912210037543714
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: finite-earth-sheet-1_52
+      rect:
+        serializedVersion: 2
+        x: 163
+        y: 75
+        width: 26
+        height: 23
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 8cda4709a2db4ea70800000000000000
+      internalID: 8855410757827079624
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: finite-earth-sheet-1_53
+      rect:
+        serializedVersion: 2
+        x: 196
+        y: 89
+        width: 25
+        height: 8
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 716988ce00d06f280800000000000000
+      internalID: -9009999706888563177
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: finite-earth-sheet-1_54
+      rect:
+        serializedVersion: 2
+        x: 196
+        y: 82
+        width: 25
+        height: 8
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: d810bd5fcd5383480800000000000000
+      internalID: -8919319838873419379
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: finite-earth-sheet-1_55
+      rect:
+        serializedVersion: 2
+        x: 227
+        y: 89
+        width: 25
+        height: 8
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 08edb349cbae51d70800000000000000
+      internalID: 9013368324913618560
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: finite-earth-sheet-1_56
+      rect:
+        serializedVersion: 2
+        x: 227
+        y: 76
+        width: 25
+        height: 14
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 3b4baab8933f0c310800000000000000
+      internalID: 1423404910730982579
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: finite-earth-sheet-1_57
+      rect:
+        serializedVersion: 2
+        x: 196
+        y: 76
+        width: 25
+        height: 7
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: bff55b87a52b78790800000000000000
+      internalID: -7527852150484541445
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: finite-earth-sheet-1_58
+      rect:
+        serializedVersion: 2
+        x: 5
+        y: 68
+        width: 23
+        height: 6
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 7205ab40bf2c31060800000000000000
+      internalID: 6923091435570483239
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: finite-earth-sheet-1_59
+      rect:
+        serializedVersion: 2
+        x: 38
+        y: 68
+        width: 8
+        height: 6
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: a5cb3fb7687bec860800000000000000
+      internalID: 7552175413379972186
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: finite-earth-sheet-1_60
+      rect:
+        serializedVersion: 2
+        x: 45
+        y: 68
+        width: 13
+        height: 6
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 90cd7290df0cc7da0800000000000000
+      internalID: -5945665215023031287
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: finite-earth-sheet-1_61
+      rect:
+        serializedVersion: 2
+        x: 62
+        y: 67
+        width: 35
+        height: 7
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 89d9c9514e4147870800000000000000
+      internalID: 8679585351697472920
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: finite-earth-sheet-1_62
+      rect:
+        serializedVersion: 2
+        x: 98
+        y: 67
+        width: 27
+        height: 7
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 682f948e0200343b0800000000000000
+      internalID: -5529575776144723322
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: finite-earth-sheet-1_63
+      rect:
+        serializedVersion: 2
+        x: 124
+        y: 67
+        width: 6
+        height: 6
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: c129ea76f0c916160800000000000000
+      internalID: 7017061284397879836
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: finite-earth-sheet-1_64
+      rect:
+        serializedVersion: 2
+        x: 135
+        y: 68
+        width: 19
+        height: 6
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: bf4faa3b71c3723a0800000000000000
+      internalID: -6690312648939342597
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: finite-earth-sheet-1_65
+      rect:
+        serializedVersion: 2
+        x: 165
+        y: 68
+        width: 21
+        height: 6
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 5b22eae21d39bbf00800000000000000
+      internalID: 1133662257854423733
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: finite-earth-sheet-1_66
+      rect:
+        serializedVersion: 2
+        x: 202
+        y: 68
+        width: 13
+        height: 6
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 655d35b3cebfdc660800000000000000
+      internalID: 7407853954120537430
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: finite-earth-sheet-1_67
+      rect:
+        serializedVersion: 2
+        x: 233
+        y: 68
+        width: 13
+        height: 6
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 24efa683bd692f7d0800000000000000
+      internalID: -2886078542902526398
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: finite-earth-sheet-1_68
+      rect:
+        serializedVersion: 2
+        x: 4
+        y: 43
+        width: 25
+        height: 20
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: bf273e2b61734a270800000000000000
+      internalID: 8260788187134391035
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: finite-earth-sheet-1_69
+      rect:
+        serializedVersion: 2
+        x: 36
+        y: 51
+        width: 24
+        height: 12
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: e8bbbea46bbd5aa50800000000000000
+      internalID: 6531868410558266254
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: finite-earth-sheet-1_70
+      rect:
+        serializedVersion: 2
+        x: 36
+        y: 42
+        width: 24
+        height: 10
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 43bbaa1a2d72fe620800000000000000
+      internalID: 2805504878484044596
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: finite-earth-sheet-1_71
+      rect:
+        serializedVersion: 2
+        x: 68
+        y: 43
+        width: 24
+        height: 20
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 7004aafc5a33ad990800000000000000
+      internalID: -7360513853736992761
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: finite-earth-sheet-1_72
+      rect:
+        serializedVersion: 2
+        x: 100
+        y: 43
+        width: 24
+        height: 20
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: f9ef9b17de3435e80800000000000000
+      internalID: -8191128610162475361
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: finite-earth-sheet-1_73
+      rect:
+        serializedVersion: 2
+        x: 132
+        y: 43
+        width: 24
+        height: 21
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 721a7013f5c3855f0800000000000000
+      internalID: -767797356924526297
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: finite-earth-sheet-1_74
+      rect:
+        serializedVersion: 2
+        x: 162
+        y: 43
+        width: 29
+        height: 21
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: ba4cab814b9ef4cc0800000000000000
+      internalID: -3724501407093832533
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: finite-earth-sheet-1_75
+      rect:
+        serializedVersion: 2
+        x: 195
+        y: 40
+        width: 26
+        height: 27
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 74eb429640ff6d940800000000000000
+      internalID: 5320720404193787463
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: finite-earth-sheet-1_76
+      rect:
+        serializedVersion: 2
+        x: 232
+        y: 42
+        width: 15
+        height: 24
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 8509c70b81274ad70800000000000000
+      internalID: 9053486601287274584
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: finite-earth-sheet-1_77
+      rect:
+        serializedVersion: 2
+        x: 11
+        y: 35
+        width: 12
+        height: 6
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 399b2a979bfb62710800000000000000
+      internalID: 1668231515317909907
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: finite-earth-sheet-1_78
+      rect:
+        serializedVersion: 2
+        x: 36
+        y: 9
+        width: 24
+        height: 26
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: a003aacde2d0d0830800000000000000
+      internalID: 4038898935743000586
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: finite-earth-sheet-1_79
+      rect:
+        serializedVersion: 2
+        x: 72
+        y: 10
+        width: 15
+        height: 25
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: efa41179ddfb95400800000000000000
+      internalID: 313492607522130686
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: finite-earth-sheet-1_80
+      rect:
+        serializedVersion: 2
+        x: 103
+        y: 34
+        width: 19
+        height: 7
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 495d364ee9ec14b50800000000000000
+      internalID: 6575764112769537428
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: finite-earth-sheet-1_81
+      rect:
+        serializedVersion: 2
+        x: 138
+        y: 35
+        width: 6
+        height: 6
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 067e19c7630322310800000000000000
+      internalID: 1378717446505097056
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: finite-earth-sheet-1_82
+      rect:
+        serializedVersion: 2
+        x: 143
+        y: 35
+        width: 8
+        height: 6
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 74ae55c792bc70e50800000000000000
+      internalID: 6775607543442303559
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: finite-earth-sheet-1_83
+      rect:
+        serializedVersion: 2
+        x: 167
+        y: 35
+        width: 17
+        height: 6
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 1db250b2bd7e393c0800000000000000
+      internalID: -4353881486231524399
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: finite-earth-sheet-1_84
+      rect:
+        serializedVersion: 2
+        x: 199
+        y: 35
+        width: 19
+        height: 6
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: f10379bf50975c830800000000000000
+      internalID: 4090808903138750495
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: finite-earth-sheet-1_85
+      rect:
+        serializedVersion: 2
+        x: 229
+        y: 34
+        width: 12
+        height: 7
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 985e96fb6a2b7a010800000000000000
+      internalID: 1200124254963230089
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: finite-earth-sheet-1_86
+      rect:
+        serializedVersion: 2
+        x: 239
+        y: 35
+        width: 12
+        height: 6
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: c78fdf0b0d3ee6ff0800000000000000
+      internalID: -40844861137618820
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: finite-earth-sheet-1_87
+      rect:
+        serializedVersion: 2
+        x: 4
+        y: 8
+        width: 25
+        height: 26
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: f5a0844bc2195a230800000000000000
+      internalID: 3649482694242863711
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: finite-earth-sheet-1_88
+      rect:
+        serializedVersion: 2
+        x: 100
+        y: 9
+        width: 24
+        height: 24
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 4bcad89871c5eada0800000000000000
+      internalID: -5931702403038597964
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: finite-earth-sheet-1_89
+      rect:
+        serializedVersion: 2
+        x: 131
+        y: 10
+        width: 9
+        height: 22
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 2f70f7b94e4b0e820800000000000000
+      internalID: 2945553050254641138
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: finite-earth-sheet-1_90
+      rect:
+        serializedVersion: 2
+        x: 134
+        y: 11
+        width: 20
+        height: 20
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 3ad8b55b5d75dc380800000000000000
+      internalID: -8949400309132980829
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: finite-earth-sheet-1_91
+      rect:
+        serializedVersion: 2
+        x: 139
+        y: 8
+        width: 18
+        height: 26
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 9f0db0c6973ee58e0800000000000000
+      internalID: -1702673498456207111
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: finite-earth-sheet-1_92
+      rect:
+        serializedVersion: 2
+        x: 163
+        y: 8
+        width: 25
+        height: 26
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 70175ee30271218d0800000000000000
+      internalID: -2877211784674709241
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: finite-earth-sheet-1_93
+      rect:
+        serializedVersion: 2
+        x: 195
+        y: 9
+        width: 26
+        height: 25
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 4bf99d11c24c942f0800000000000000
+      internalID: -988042949674033228
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: finite-earth-sheet-1_94
+      rect:
+        serializedVersion: 2
+        x: 227
+        y: 9
+        width: 25
+        height: 25
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 9d9102e4b00851970800000000000000
+      internalID: 8725020639143926233
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: finite-earth-sheet-1_95
+      rect:
+        serializedVersion: 2
+        x: 39
+        y: 4
+        width: 19
+        height: 6
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 7599c1284c0882820800000000000000
+      internalID: 2893704342070401367
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: finite-earth-sheet-1_96
+      rect:
+        serializedVersion: 2
+        x: 69
+        y: 3
+        width: 22
+        height: 7
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 713a1933cf9540620800000000000000
+      internalID: 2739413413079917335
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: finite-earth-sheet-1_97
+      rect:
+        serializedVersion: 2
+        x: 99
+        y: 3
+        width: 23
+        height: 7
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 3bd12b8be89c153d0800000000000000
+      internalID: -3219570643771974221
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: finite-earth-sheet-1_98
+      rect:
+        serializedVersion: 2
+        x: 121
+        y: 3
+        width: 7
+        height: 6
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 367d48cfa6e6ea880800000000000000
+      internalID: -8597813232821545117
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: finite-earth-sheet-1_99
+      rect:
+        serializedVersion: 2
+        x: 195
+        y: 3
+        width: 27
+        height: 7
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 7bf1c0215ec8763c0800000000000000
+      internalID: -4366366398234222665
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: finite-earth-sheet-1_100
+      rect:
+        serializedVersion: 2
+        x: 225
+        y: 4
+        width: 16
+        height: 6
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 67c4d54fbdc715c90800000000000000
+      internalID: -7182822646539793290
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: finite-earth-sheet-1_101
+      rect:
+        serializedVersion: 2
+        x: 240
+        y: 3
+        width: 15
+        height: 7
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: ce29ad781de4118d0800000000000000
+      internalID: -2877432025078656276
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    outline: []
+    customData: 
+    physicsShape: []
+    bones: []
+    spriteID: 
+    internalID: 0
+    vertices: []
+    indices: 
+    edges: []
+    weights: []
+    secondaryTextures: []
+    spriteCustomMetadata:
+      entries: []
+    nameFileIdTable:
+      finite-earth-sheet-1_0: 6090229868203680932
+      finite-earth-sheet-1_1: 3057853507595279131
+      finite-earth-sheet-1_10: 536683837209979678
+      finite-earth-sheet-1_100: -7182822646539793290
+      finite-earth-sheet-1_101: -2877432025078656276
+      finite-earth-sheet-1_11: -8140733354190010328
+      finite-earth-sheet-1_12: -2916510925190661335
+      finite-earth-sheet-1_13: 5554125161294997326
+      finite-earth-sheet-1_14: -787909630006816198
+      finite-earth-sheet-1_15: 7568316067118195157
+      finite-earth-sheet-1_16: 8523886949787369788
+      finite-earth-sheet-1_17: -7686790565074981920
+      finite-earth-sheet-1_18: 5484257449035687141
+      finite-earth-sheet-1_19: -9015834800000040435
+      finite-earth-sheet-1_2: 5725839690488325528
+      finite-earth-sheet-1_20: -4094464211915164502
+      finite-earth-sheet-1_21: -1448126666572716030
+      finite-earth-sheet-1_22: 6349466594835147845
+      finite-earth-sheet-1_23: 6091719733619029056
+      finite-earth-sheet-1_24: -2913820549183993872
+      finite-earth-sheet-1_25: 4954560008699910420
+      finite-earth-sheet-1_26: -4876129624128406968
+      finite-earth-sheet-1_27: 4048763075817437941
+      finite-earth-sheet-1_28: -4893080534842843990
+      finite-earth-sheet-1_29: -7373674620602272745
+      finite-earth-sheet-1_3: 3463200720284241640
+      finite-earth-sheet-1_30: -4273676952955652749
+      finite-earth-sheet-1_31: 653565790564689490
+      finite-earth-sheet-1_32: 2798563278109385839
+      finite-earth-sheet-1_33: -2880797049335358991
+      finite-earth-sheet-1_34: -7976809347917675755
+      finite-earth-sheet-1_35: -4844873585779520948
+      finite-earth-sheet-1_36: 1396002368992065267
+      finite-earth-sheet-1_37: 4872223596597482735
+      finite-earth-sheet-1_38: 7679507846426442026
+      finite-earth-sheet-1_39: 4047042825088924429
+      finite-earth-sheet-1_4: 3627039402203826410
+      finite-earth-sheet-1_40: 7148614109051913837
+      finite-earth-sheet-1_41: -1074802881868935666
+      finite-earth-sheet-1_42: 1090603833664298249
+      finite-earth-sheet-1_43: 3970644444082456642
+      finite-earth-sheet-1_44: -6641063582164476603
+      finite-earth-sheet-1_45: 4230055940414382142
+      finite-earth-sheet-1_46: -2166790436152143628
+      finite-earth-sheet-1_47: 4116494435823227044
+      finite-earth-sheet-1_48: -818834698398539961
+      finite-earth-sheet-1_49: -594851844449946506
+      finite-earth-sheet-1_5: 4931989181628497370
+      finite-earth-sheet-1_50: 5806287696210567082
+      finite-earth-sheet-1_51: 2481912210037543714
+      finite-earth-sheet-1_52: 8855410757827079624
+      finite-earth-sheet-1_53: -9009999706888563177
+      finite-earth-sheet-1_54: -8919319838873419379
+      finite-earth-sheet-1_55: 9013368324913618560
+      finite-earth-sheet-1_56: 1423404910730982579
+      finite-earth-sheet-1_57: -7527852150484541445
+      finite-earth-sheet-1_58: 6923091435570483239
+      finite-earth-sheet-1_59: 7552175413379972186
+      finite-earth-sheet-1_6: -7894406641936652793
+      finite-earth-sheet-1_60: -5945665215023031287
+      finite-earth-sheet-1_61: 8679585351697472920
+      finite-earth-sheet-1_62: -5529575776144723322
+      finite-earth-sheet-1_63: 7017061284397879836
+      finite-earth-sheet-1_64: -6690312648939342597
+      finite-earth-sheet-1_65: 1133662257854423733
+      finite-earth-sheet-1_66: 7407853954120537430
+      finite-earth-sheet-1_67: -2886078542902526398
+      finite-earth-sheet-1_68: 8260788187134391035
+      finite-earth-sheet-1_69: 6531868410558266254
+      finite-earth-sheet-1_7: -4869405112411645328
+      finite-earth-sheet-1_70: 2805504878484044596
+      finite-earth-sheet-1_71: -7360513853736992761
+      finite-earth-sheet-1_72: -8191128610162475361
+      finite-earth-sheet-1_73: -767797356924526297
+      finite-earth-sheet-1_74: -3724501407093832533
+      finite-earth-sheet-1_75: 5320720404193787463
+      finite-earth-sheet-1_76: 9053486601287274584
+      finite-earth-sheet-1_77: 1668231515317909907
+      finite-earth-sheet-1_78: 4038898935743000586
+      finite-earth-sheet-1_79: 313492607522130686
+      finite-earth-sheet-1_8: 578807128554051325
+      finite-earth-sheet-1_80: 6575764112769537428
+      finite-earth-sheet-1_81: 1378717446505097056
+      finite-earth-sheet-1_82: 6775607543442303559
+      finite-earth-sheet-1_83: -4353881486231524399
+      finite-earth-sheet-1_84: 4090808903138750495
+      finite-earth-sheet-1_85: 1200124254963230089
+      finite-earth-sheet-1_86: -40844861137618820
+      finite-earth-sheet-1_87: 3649482694242863711
+      finite-earth-sheet-1_88: -5931702403038597964
+      finite-earth-sheet-1_89: 2945553050254641138
+      finite-earth-sheet-1_9: 3845373570773601743
+      finite-earth-sheet-1_90: -8949400309132980829
+      finite-earth-sheet-1_91: -1702673498456207111
+      finite-earth-sheet-1_92: -2877211784674709241
+      finite-earth-sheet-1_93: -988042949674033228
+      finite-earth-sheet-1_94: 8725020639143926233
+      finite-earth-sheet-1_95: 2893704342070401367
+      finite-earth-sheet-1_96: 2739413413079917335
+      finite-earth-sheet-1_97: -3219570643771974221
+      finite-earth-sheet-1_98: -8597813232821545117
+      finite-earth-sheet-1_99: -4366366398234222665
+  mipmapLimitGroupName: 
+  pSDRemoveMatte: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

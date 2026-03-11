@@ -18,7 +18,7 @@ const ACTIONS_PER_CYCLE = 9999;
 const DEFORESTED_RECOVERY_CYCLES = 3;
 
 const MAP_ROWS = [
-  "WWWWWWWWWWWWWWWWWWWWWWWW",
+  "IIIIIIIIIIIIIIIIIIIIIIII",
   "WWWWWWWWWWWWWWWWWWWWWWWW",
   "WWPPPPPFFFFFPPPPPPPPWWWW",
   "WPPPPPFFFFFFPPPPPEPPPWWW",
@@ -32,7 +32,7 @@ const MAP_ROWS = [
   "WPPBBBPPPPPPPPPPPPPPPPWW",
   "WWPPPPPDDPPPPPPPPPPPPWWW",
   "WWWWPPPPPPPPPPPPPPWWWWWW",
-  "WWWWWWWWWWWWWWWWWWWWWWWW"
+  "IIIIIIIIIIIIIIIIIIIIIIII"
 ];
 
 const TERRAIN_BY_SYMBOL: Record<string, TileType> = {
@@ -43,25 +43,27 @@ const TERRAIN_BY_SYMBOL: Record<string, TileType> = {
   E: "Desert",
   B: "Barren",
   D: "DeforestedForest",
-  A: "Farmland"
+  A: "Farmland",
+  I: "Ice"
 };
 
 const CARBON_VALUE: Record<TileType, number> = {
-  Forest: 4,
+  Forest: 0,
   Plains: 1,
-  Water: 1,
-  Farmland: 0,
-  Mountain: 0,
-  Desert: -1,
-  DeforestedForest: -2,
-  Barren: -3
+  Water: 0,
+  Farmland: 2,
+  Mountain: 1,
+  Desert: 2,
+  DeforestedForest: 3,
+  Barren: 4,
+  Ice: 0
 };
 
 const BUILDING_CARBON: Record<BuildingType, number> = {
   None: 0,
-  Settlement: -1,
-  Industry: -3,
-  RecoveryProject: 2
+  Settlement: 1,
+  Industry: 3,
+  RecoveryProject: -2
 };
 
 const ACTION_ORDER: ActionType[] = [
@@ -264,7 +266,7 @@ export class InMemoryAuthoritativeWorld {
     this.carbonTotal += carbonDelta;
 
     player.actionsTaken += 1;
-    player.sustainabilityScore += forestDelta - Math.max(0, -carbonDelta);
+    player.sustainabilityScore += forestDelta - Math.max(0, carbonDelta);
 
     const tileDelta: TileDelta = {
       q: intent.q,

@@ -10,8 +10,9 @@ public class AsciiLoginPopupPresenter : MonoBehaviour
     [SerializeField] private FiniteEarthGameOrchestrator orchestrator;
 
     [Header("Popup")]
-    [SerializeField] private bool showOnStartup = true;
-    [SerializeField] private Vector2 panelSize = new Vector2(560f, 380f);
+    [SerializeField] private bool showOnStartup = false;
+    [SerializeField] private bool hidePopupInDemoMode = true;
+    [SerializeField] private Vector2 panelSize = new Vector2(840f, 570f);
     [SerializeField] private string offlineWalletPrefsKey = "finite-earth.offline-wallet";
     [SerializeField] private string offlineWalletPrefix = "offline";
 
@@ -40,6 +41,14 @@ public class AsciiLoginPopupPresenter : MonoBehaviour
         if (showOnStartup)
         {
             CreatePopupIfNeeded();
+
+            if (ShouldBypassPopupForDemo())
+            {
+                HidePopup();
+                wasAuthenticated = true;
+                return;
+            }
+
             ShowPopup();
         }
     }
@@ -252,33 +261,33 @@ public class AsciiLoginPopupPresenter : MonoBehaviour
         outline.useGraphicAlpha = true;
 
         VerticalLayoutGroup layout = panel.AddComponent<VerticalLayoutGroup>();
-        layout.padding = new RectOffset(14, 14, 14, 14);
-        layout.spacing = 10f;
+        layout.padding = new RectOffset(21, 21, 21, 21);
+        layout.spacing = 15f;
         layout.childControlHeight = true;
         layout.childControlWidth = true;
         layout.childForceExpandHeight = false;
         layout.childForceExpandWidth = true;
 
-        Text header = CreateText(panel.transform, 18, textColor, TextAnchor.UpperLeft);
+        Text header = CreateText(panel.transform, 27, textColor, TextAnchor.UpperLeft);
         header.text =
             "+----------------------------------------------+\n" +
             "| FINITE EARTH :: ACCESS TERMINAL             |\n" +
             "| AUTH OR GUEST ACCESS TO ENTER WORLD         |\n" +
             "+----------------------------------------------+";
-        header.gameObject.AddComponent<LayoutElement>().preferredHeight = 88f;
+        header.gameObject.AddComponent<LayoutElement>().preferredHeight = 132f;
 
-        Text body = CreateText(panel.transform, 16, mutedTextColor, TextAnchor.UpperLeft);
+        Text body = CreateText(panel.transform, 24, mutedTextColor, TextAnchor.UpperLeft);
         body.text =
             "Identity options:\n" +
             "1) Google login (Thirdweb in-app wallet)\n" +
             "2) Create account (email in-app wallet)\n" +
             "3) External injected wallet (MetaMask etc)";
-        body.gameObject.AddComponent<LayoutElement>().preferredHeight = 84f;
+        body.gameObject.AddComponent<LayoutElement>().preferredHeight = 126f;
 
         GameObject buttonsRow = new GameObject("ButtonsRow");
         buttonsRow.transform.SetParent(panel.transform, false);
         LayoutElement rowLayoutElement = buttonsRow.AddComponent<LayoutElement>();
-        rowLayoutElement.preferredHeight = 42f;
+        rowLayoutElement.preferredHeight = 63f;
 
         HorizontalLayoutGroup buttonsLayout = buttonsRow.AddComponent<HorizontalLayoutGroup>();
         buttonsLayout.spacing = 10f;
@@ -294,7 +303,7 @@ public class AsciiLoginPopupPresenter : MonoBehaviour
         GameObject walletRow = new GameObject("WalletRow");
         walletRow.transform.SetParent(panel.transform, false);
         LayoutElement walletRowLayout = walletRow.AddComponent<LayoutElement>();
-        walletRowLayout.preferredHeight = 42f;
+        walletRowLayout.preferredHeight = 63f;
 
         HorizontalLayoutGroup walletLayout = walletRow.AddComponent<HorizontalLayoutGroup>();
         walletLayout.spacing = 10f;
@@ -310,7 +319,7 @@ public class AsciiLoginPopupPresenter : MonoBehaviour
         GameObject offlineRow = new GameObject("OfflineRow");
         offlineRow.transform.SetParent(panel.transform, false);
         LayoutElement offlineRowLayout = offlineRow.AddComponent<LayoutElement>();
-        offlineRowLayout.preferredHeight = 42f;
+        offlineRowLayout.preferredHeight = 63f;
 
         HorizontalLayoutGroup offlineLayout = offlineRow.AddComponent<HorizontalLayoutGroup>();
         offlineLayout.spacing = 0f;
@@ -322,9 +331,9 @@ public class AsciiLoginPopupPresenter : MonoBehaviour
 
         offlineButton = CreateAsciiButton(offlineRow.transform, "[ OFFLINE MODE ]", HandleOfflinePressed);
 
-        statusText = CreateText(panel.transform, 14, mutedTextColor, TextAnchor.UpperLeft);
+        statusText = CreateText(panel.transform, 21, mutedTextColor, TextAnchor.UpperLeft);
         statusText.text = "[idle] choose a login method.";
-        statusText.gameObject.AddComponent<LayoutElement>().preferredHeight = 40f;
+        statusText.gameObject.AddComponent<LayoutElement>().preferredHeight = 60f;
     }
 
     private static void EnsureEventSystem()
@@ -424,6 +433,16 @@ public class AsciiLoginPopupPresenter : MonoBehaviour
         }
     }
 
+    private bool ShouldBypassPopupForDemo()
+    {
+        if (!hidePopupInDemoMode || walletSession == null)
+        {
+            return false;
+        }
+
+        return walletSession.IsRuntimeDemoMode;
+    }
+
     private void SetStatus(string message)
     {
         if (statusText != null)
@@ -480,7 +499,7 @@ public class AsciiLoginPopupPresenter : MonoBehaviour
     {
         GameObject buttonObject = new GameObject("Button");
         buttonObject.transform.SetParent(parent, false);
-        buttonObject.AddComponent<LayoutElement>().preferredHeight = 42f;
+        buttonObject.AddComponent<LayoutElement>().preferredHeight = 63f;
         Image buttonImage = buttonObject.AddComponent<Image>();
         buttonImage.color = new Color(0.02f, 0.05f, 0.05f, 0.96f);
         Outline buttonOutline = buttonObject.AddComponent<Outline>();
@@ -490,7 +509,7 @@ public class AsciiLoginPopupPresenter : MonoBehaviour
         Button button = buttonObject.AddComponent<Button>();
         button.onClick.AddListener(onClick);
 
-        Text buttonText = CreateText(buttonObject.transform, 15, textColor, TextAnchor.MiddleCenter);
+        Text buttonText = CreateText(buttonObject.transform, 23, textColor, TextAnchor.MiddleCenter);
         buttonText.text = label;
         RectTransform buttonTextRect = buttonText.rectTransform;
         buttonTextRect.anchorMin = Vector2.zero;
@@ -503,18 +522,6 @@ public class AsciiLoginPopupPresenter : MonoBehaviour
 
     private Font ResolveRuntimeFont()
     {
-        Font dynamic = Font.CreateDynamicFontFromOSFont(new[] { "Consolas", "JetBrains Mono", "Courier New", "Lucida Console" }, 18);
-        if (dynamic != null)
-        {
-            return dynamic;
-        }
-
-        Font builtIn = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-        if (builtIn != null)
-        {
-            return builtIn;
-        }
-
-        return Resources.GetBuiltinResource<Font>("Arial.ttf");
+        return AsciiFontResolver.ResolveFont(18);
     }
 }

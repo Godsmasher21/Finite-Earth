@@ -229,19 +229,38 @@ app.get("/world/snapshot", authenticateHttpToken, (_req, res) => {
   res.json(toWorldSnapshotPayload(world.getFullSnapshot()));
 });
 
-app.get("/leaderboard", (_req, res) => {
+app.get("/leaderboard", (req, res) => {
+  const limit = parseIntQuery(req.query.limit, 100, 1, 200);
+  const offset = parseIntQuery(req.query.offset, 0, 0, 10_000);
+
+  const totalRow = db
+    .prepare("SELECT COUNT(1) AS count FROM leaderboard")
+    .get() as { count: number };
+
   const rows = db
     .prepare(`
       SELECT wallet_address, sustainability_score, actions_taken, owned_tiles_count, updated_at_ms
       FROM leaderboard
       ORDER BY sustainability_score DESC
-      LIMIT 100
+      LIMIT ? OFFSET ?
     `)
-    .all();
+    .all(limit, offset) as Array<{
+      wallet_address: string;
+      sustainability_score: number;
+      actions_taken: number;
+      owned_tiles_count: number;
+      updated_at_ms: number;
+    }>;
 
   res.json({
     worldId: "finite-earth-alpha",
-    players: rows
+    total: totalRow.count,
+    limit,
+    offset,
+    players: rows.map((row, index) => ({
+      rank: offset + index + 1,
+      ...row
+    }))
   });
 });
 
@@ -784,6 +803,15 @@ function insertCycleEvent(
 function rowCount(database: Database.Database, tableName: string): number {
   const row = database.prepare(`SELECT COUNT(1) AS count FROM ${tableName}`).get() as { count: number };
   return row.count;
+}
+
+function parseIntQuery(raw: unknown, fallback: number, min: number, max: number): number {
+  const parsed = Number(raw);
+  if (!Number.isFinite(parsed)) {
+    return fallback;
+  }
+
+  return Math.min(max, Math.max(min, Math.trunc(parsed)));
 }
 
 type WebSocket = {

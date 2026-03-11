@@ -11,7 +11,16 @@ export type ActionType =
   | "EndTurn";
 
 export type BuildingType = "None" | "Settlement" | "Industry" | "RecoveryProject";
-export type TileType = "Forest" | "Plains" | "Mountain" | "Water" | "Desert" | "Barren" | "DeforestedForest" | "Farmland";
+export type TileType =
+  | "Forest"
+  | "Plains"
+  | "Mountain"
+  | "Water"
+  | "Desert"
+  | "Barren"
+  | "DeforestedForest"
+  | "Farmland"
+  | "Ice";
 
 export type ActionIntent = {
   intentId: string;

@@ -16,6 +16,10 @@ public static class TileStateMachine
                 nextBuilding = BuildingType.Settlement;
                 return true;
 
+            case FiniteEarthActionType.BuildBarracks:
+                nextBuilding = BuildingType.Barracks;
+                return true;
+
             case FiniteEarthActionType.BuildIndustry:
                 nextBuilding = BuildingType.Industry;
                 return true;
@@ -34,14 +38,26 @@ public static class TileStateMachine
 
             case FiniteEarthActionType.Irrigate:
                 nextTerrain = TileType.Plains;
+                nextBuilding = BuildingType.RecoveryProject;
                 return true;
 
             case FiniteEarthActionType.Mine:
-                nextTerrain = TileType.Barren;
+                if (currentTerrain == TileType.Mountain)
+                {
+                    nextTerrain = TileType.Barren;
+                }
+                else
+                {
+                    nextTerrain = currentTerrain;
+                }
                 return true;
 
             case FiniteEarthActionType.Restore:
                 nextTerrain = TileType.Plains;
+                nextBuilding = BuildingType.RecoveryProject;
+                return true;
+
+            case FiniteEarthActionType.SpawnArmy:
                 return true;
 
             case FiniteEarthActionType.Claim:

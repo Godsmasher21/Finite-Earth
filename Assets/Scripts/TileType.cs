@@ -10,9 +10,11 @@ public enum TileType
     Barren = 5,
     DeforestedForest = 6,
     Farmland = 7,
-    Settlement = 8,
-    Factory = 9,
-    RecoveryBuilding = 10
+    Ice = 8,
+    Settlement = 9,
+    Factory = 10,
+    RecoveryBuilding = 11,
+    Barracks = 12
 }
 
 public enum BuildingType
@@ -20,7 +22,8 @@ public enum BuildingType
     None = 0,
     Settlement = 1,
     Industry = 2,
-    RecoveryProject = 3
+    RecoveryProject = 3,
+    Barracks = 4
 }
 
 public enum FiniteEarthActionType
@@ -34,7 +37,16 @@ public enum FiniteEarthActionType
     Irrigate = 6,
     Mine = 7,
     Restore = 8,
-    EndTurn = 9
+    EndTurn = 9,
+    SpawnArmy = 10,
+    CreateTradeOffer = 11,
+    AcceptTradeOffer = 12,
+    CancelTradeOffer = 13,
+    CreatePact = 14,
+    AcceptPact = 15,
+    CancelPact = 16,
+    ResearchTech = 17,
+    BuildBarracks = 18
 }
 
 [Serializable]
@@ -80,12 +92,12 @@ public static class TileTypeUtility
 {
     public static bool IsTerrain(this TileType type)
     {
-        return type <= TileType.Farmland;
+        return type <= TileType.Ice;
     }
 
     public static bool IsClaimable(this TileType type)
     {
-        return type != TileType.Water;
+        return type != TileType.Water && type != TileType.Ice;
     }
 
     public static string GetDisplayName(this TileType type)
@@ -108,12 +120,16 @@ public static class TileTypeUtility
                 return "Deforested";
             case TileType.Farmland:
                 return "Farmland";
+            case TileType.Ice:
+                return "Ice";
             case TileType.Settlement:
                 return "Settlement";
             case TileType.Factory:
                 return "Industry";
             case TileType.RecoveryBuilding:
                 return "Recovery";
+            case TileType.Barracks:
+                return "Barracks";
             default:
                 return type.ToString();
         }
@@ -131,6 +147,8 @@ public static class TileTypeUtility
                 return "Industry";
             case BuildingType.RecoveryProject:
                 return "Recovery Project";
+            case BuildingType.Barracks:
+                return "Barracks";
             default:
                 return type.ToString();
         }
@@ -146,6 +164,8 @@ public static class TileTypeUtility
                 return TileType.Factory;
             case BuildingType.RecoveryProject:
                 return TileType.RecoveryBuilding;
+            case BuildingType.Barracks:
+                return TileType.Barracks;
             default:
                 return TileType.Plains;
         }
@@ -156,21 +176,23 @@ public static class TileTypeUtility
         switch (type)
         {
             case TileType.Forest:
-                return 4;
+                return 0;
             case TileType.Plains:
                 return 1;
             case TileType.Water:
-                return 1;
+                return 0;
             case TileType.Farmland:
-                return 0;
+                return 2;
             case TileType.Mountain:
-                return 0;
+                return 1;
             case TileType.Desert:
-                return -1;
+                return 2;
             case TileType.DeforestedForest:
-                return -2;
+                return 3;
             case TileType.Barren:
-                return -3;
+                return 4;
+            case TileType.Ice:
+                return 0;
             default:
                 return 0;
         }
@@ -181,11 +203,13 @@ public static class TileTypeUtility
         switch (type)
         {
             case BuildingType.Settlement:
-                return -1;
+                return 1;
             case BuildingType.Industry:
-                return -3;
+                return 3;
             case BuildingType.RecoveryProject:
-                return 2;
+                return -2;
+            case BuildingType.Barracks:
+                return 1;
             default:
                 return 0;
         }

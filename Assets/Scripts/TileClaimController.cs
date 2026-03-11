@@ -19,9 +19,9 @@ public class TileClaimController : MonoBehaviour
     [SerializeField] private HexWorldGeneratorTilemap worldGenerator;
 
     [Header("Starting Resources")]
-    [SerializeField, Min(0)] private int startingWood = 3;
-    [SerializeField, Min(0)] private int startingFood = 3;
-    [SerializeField, Min(0)] private int startingMinerals = 0;
+    [SerializeField, Min(0)] private int startingWood = 5;
+    [SerializeField, Min(0)] private int startingFood = 5;
+    [SerializeField, Min(0)] private int startingMinerals = 5;
 
     [Header("Action Economy")]
     [SerializeField, Min(1)] private int maxActionsPerTurn = 3;
@@ -34,6 +34,7 @@ public class TileClaimController : MonoBehaviour
     [SerializeField, Min(1)] private int minutesPerCycle = 60;
     [SerializeField, Range(0, 23)] private int clockStartHour = 6;
     [SerializeField, Range(0, 59)] private int clockStartMinute = 0;
+    [SerializeField, Min(1)] private int recoveryProjectDurationCycles = 2;
 
     [Header("Camera Controls")]
     [SerializeField] private float keyboardPanSpeed = 8f;
@@ -85,6 +86,7 @@ public class TileClaimController : MonoBehaviour
     private int clockMinutes;
     private float cycleTimer;
     private string currentStatusMessage = "Initializing Finite Earth...";
+    private readonly Dictionary<long, int> recoveryProjectStartedCycle = new Dictionary<long, int>();
 
     private sealed class ActionSpec
     {
@@ -177,17 +179,102 @@ public class TileClaimController : MonoBehaviour
 
     private void BootstrapNewArchitecture()
     {
+        if (mainCamera == null)
+        {
+            mainCamera = Camera.main;
+        }
+
+        if (worldGenerator == null)
+        {
+            worldGenerator = FindAnyObjectByType<HexWorldGeneratorTilemap>();
+        }
+
+        if (ownership == null)
+        {
+            ownership = FindAnyObjectByType<OwnershipOverlayPointTop>();
+        }
+
+        EnsureMainCameraConfigured();
+        EnsureEventSystem();
+        EnsureRuntimeCanvas();
+
         EnsureComponent<GameStateViewModel>();
         EnsureComponent<ActionInputController>();
-        EnsureComponent<ActionPanelPresenter>();
-        EnsureComponent<AsciiHudPresenter>();
-        EnsureComponentByName("AsciiLoginPopupPresenter");
         EnsureComponent<WorldCameraController>();
+        EnsureComponent<ArmyOverlayPointTop>();
+        EnsureComponent<ClimateEventOverlayPointTop>();
         EnsureComponent<SpacetimeRealtimeClient>();
         EnsureComponent<ThirdwebBridge>();
         EnsureComponent<WalletSessionController>();
-        EnsureComponent<NetworkSessionCoordinator>();
         EnsureComponent<FiniteEarthGameOrchestrator>();
+        EnsureComponent<NetworkSessionCoordinator>();
+        EnsureComponent<CommandTableHudPresenter>();
+        EnsureComponent<ActionPanelPresenter>();
+        EnsureComponent<AsciiHudPresenter>();
+        EnsureComponent<AsciiMarketDiplomacyPresenter>();
+        EnsureComponentByName("AsciiLoginPopupPresenter");
+        EnsureComponentByName("AsciiTutorialPopupPresenter");
+    }
+
+    private void EnsureMainCameraConfigured()
+    {
+        if (mainCamera == null)
+        {
+            GameObject cameraObject = new GameObject("Main Camera");
+            cameraObject.tag = "MainCamera";
+            mainCamera = cameraObject.AddComponent<Camera>();
+            cameraObject.AddComponent<AudioListener>();
+        }
+
+        mainCamera.orthographic = true;
+
+        Vector3 cameraPosition = mainCamera.transform.position;
+        if (Mathf.Approximately(cameraPosition.z, 0f))
+        {
+            cameraPosition.z = -10f;
+            mainCamera.transform.position = cameraPosition;
+        }
+    }
+
+    private static Canvas EnsureRuntimeCanvas()
+    {
+        Canvas existing = FindAnyObjectByType<Canvas>();
+        if (existing != null)
+        {
+            EnsureCanvasComponents(existing.gameObject);
+            return existing;
+        }
+
+        GameObject canvasObject = new GameObject("FiniteEarthRuntimeCanvas");
+        Canvas canvas = canvasObject.AddComponent<Canvas>();
+        canvas.renderMode = RenderMode.ScreenSpaceOverlay;
+        canvas.pixelPerfect = true;
+        EnsureCanvasComponents(canvasObject);
+        return canvas;
+    }
+
+    private static void EnsureCanvasComponents(GameObject canvasObject)
+    {
+        if (canvasObject == null)
+        {
+            return;
+        }
+
+        CanvasScaler scaler = canvasObject.GetComponent<CanvasScaler>();
+        if (scaler == null)
+        {
+            scaler = canvasObject.AddComponent<CanvasScaler>();
+        }
+
+        scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
+        scaler.referenceResolution = new Vector2(1920f, 1080f);
+        scaler.screenMatchMode = CanvasScaler.ScreenMatchMode.MatchWidthOrHeight;
+        scaler.matchWidthOrHeight = 0.5f;
+
+        if (canvasObject.GetComponent<GraphicRaycaster>() == null)
+        {
+            canvasObject.AddComponent<GraphicRaycaster>();
+        }
     }
 
     private T EnsureComponent<T>() where T : Component
@@ -241,10 +328,10 @@ public class TileClaimController : MonoBehaviour
         actionLookup.Clear();
         RegisterAction(new ActionSpec(FiniteEarthActionType.Claim, "Claim", "Expand to an adjacent non-water tile inside settlement range.", default, new Color(0.26f, 0.50f, 0.39f, 1f), claimIcon));
         RegisterAction(new ActionSpec(FiniteEarthActionType.BuildSettlement, "Settlement", "Build a settlement on owned plains to expand influence.", new FiniteEarthResourcePool { wood = 2, food = 2 }, new Color(0.59f, 0.42f, 0.28f, 1f), settlementIcon));
-        RegisterAction(new ActionSpec(FiniteEarthActionType.BuildIndustry, "Industry", "Place industry on owned barren land for mineral income.", new FiniteEarthResourcePool { wood = 1, minerals = 2 }, new Color(0.42f, 0.44f, 0.49f, 1f), industryIcon));
+        RegisterAction(new ActionSpec(FiniteEarthActionType.BuildIndustry, "Industry", "Place industry on owned plains, barren, or mountains. Barren yields 0.75x, plains 1x, mountains 1.5x mineral output.", new FiniteEarthResourcePool { wood = 1, minerals = 2 }, new Color(0.42f, 0.44f, 0.49f, 1f), industryIcon));
         RegisterAction(new ActionSpec(FiniteEarthActionType.HarvestForest, "Harvest", "Cut forest for wood, leaving the tile deforested.", default, new Color(0.52f, 0.23f, 0.18f, 1f), harvestIcon));
         RegisterAction(new ActionSpec(FiniteEarthActionType.Reforest, "Reforest", "Turn plains or barren land back into forest.", new FiniteEarthResourcePool { wood = 1, food = 1 }, new Color(0.17f, 0.45f, 0.25f, 1f), reforestIcon));
-        RegisterAction(new ActionSpec(FiniteEarthActionType.Farm, "Farm", "Convert owned plains into farmland for food production.", default, new Color(0.66f, 0.56f, 0.24f, 1f), farmIcon));
+        RegisterAction(new ActionSpec(FiniteEarthActionType.Farm, "Farm", "Convert owned plains into farmland for food production.", new FiniteEarthResourcePool { wood = 1 }, new Color(0.66f, 0.56f, 0.24f, 1f), farmIcon));
         RegisterAction(new ActionSpec(FiniteEarthActionType.Irrigate, "Irrigate", "Turn desert near water into plains.", new FiniteEarthResourcePool { minerals = 1 }, new Color(0.23f, 0.49f, 0.67f, 1f), irrigateIcon));
         RegisterAction(new ActionSpec(FiniteEarthActionType.Mine, "Mine", "Strip a mountain for minerals and leave barren land.", default, new Color(0.50f, 0.52f, 0.56f, 1f), mineIcon));
         RegisterAction(new ActionSpec(FiniteEarthActionType.Restore, "Restore", "Spend resources to rehabilitate damaged land into plains.", new FiniteEarthResourcePool { wood = 1, food = 1, minerals = 1 }, new Color(0.36f, 0.60f, 0.52f, 1f), restoreIcon));
@@ -450,7 +537,10 @@ public class TileClaimController : MonoBehaviour
             return false;
         }
 
-        if (requireSettlementRadius && worldGenerator.HasAnySettlement() && !worldGenerator.IsWithinSettlementRadius(cell, GetEffectiveSettlementRadius()))
+        if (action != FiniteEarthActionType.Restore
+            && requireSettlementRadius
+            && worldGenerator.HasAnySettlement()
+            && !worldGenerator.IsWithinSettlementRadius(cell, GetEffectiveSettlementRadius()))
         {
             reason = "This tile is outside settlement influence.";
             return false;
@@ -481,15 +571,15 @@ public class TileClaimController : MonoBehaviour
             case FiniteEarthActionType.Irrigate:
                 if (buildingType != BuildingType.None) { reason = "Buildings block irrigation."; return false; }
                 if (terrainType != TileType.Desert) { reason = "Only desert tiles need irrigation."; return false; }
-                if (!worldGenerator.HasAdjacentTerrainType(cell, TileType.Water)) { reason = "Irrigation needs a neighboring water tile."; return false; }
+                if (!worldGenerator.HasTerrainTypeWithinRadius(cell, TileType.Water, 10)) { reason = "Irrigation needs water within 10 tiles."; return false; }
                 return true;
             case FiniteEarthActionType.Mine:
                 if (buildingType != BuildingType.None) { reason = "Buildings block mining."; return false; }
-                if (terrainType != TileType.Mountain) { reason = "Only mountains can be mined."; return false; }
+                if (terrainType != TileType.Mountain && terrainType != TileType.Barren) { reason = "Only mountains or barren tiles can be mined."; return false; }
                 return true;
             case FiniteEarthActionType.Restore:
                 if (buildingType != BuildingType.None) { reason = "Buildings must be cleared before restoration."; return false; }
-                if (terrainType != TileType.Barren && terrainType != TileType.DeforestedForest) { reason = "Only barren or deforested land can be restored."; return false; }
+                if (terrainType != TileType.Barren) { reason = "Only barren land can be restored."; return false; }
                 return true;
             default:
                 reason = "Unsupported action.";
@@ -538,17 +628,24 @@ public class TileClaimController : MonoBehaviour
 
             case FiniteEarthActionType.Irrigate:
                 worldGenerator.TrySetTileType(cell, TileType.Plains);
+                worldGenerator.TrySetBuildingType(cell, BuildingType.RecoveryProject);
+                recoveryProjectStartedCycle[PackCoord(cell)] = cycleNumber;
                 resultMessage = "Irrigated desert into plains.";
                 return true;
 
             case FiniteEarthActionType.Mine:
-                worldGenerator.TrySetTileType(cell, TileType.Barren);
+                if (worldGenerator.TryGetTileType(cell, out TileType terrainType) && terrainType == TileType.Mountain)
+                {
+                    worldGenerator.TrySetTileType(cell, TileType.Barren);
+                }
                 reward = new FiniteEarthResourcePool { minerals = 2 };
                 resultMessage = "Mined the mountain for +2 minerals.";
                 return true;
 
             case FiniteEarthActionType.Restore:
                 worldGenerator.TrySetTileType(cell, TileType.Plains);
+                worldGenerator.TrySetBuildingType(cell, BuildingType.RecoveryProject);
+                recoveryProjectStartedCycle[PackCoord(cell)] = cycleNumber;
                 resultMessage = "Restored damaged land back into plains.";
                 return true;
 
@@ -586,7 +683,48 @@ public class TileClaimController : MonoBehaviour
         cycleNumber++;
         actionsRemaining = maxActionsPerTurn;
         AdvanceClockTime();
+        ApplyRecoveryProjectLifecycle();
         SetStatus($"Cycle {cycleNumber} started. Passive income: {FormatIncome(income)}.");
+    }
+
+    private void ApplyRecoveryProjectLifecycle()
+    {
+        if (worldGenerator == null || recoveryProjectStartedCycle.Count == 0 || recoveryProjectDurationCycles <= 0)
+        {
+            return;
+        }
+
+        var toRemove = new List<long>();
+        foreach (KeyValuePair<long, int> pair in recoveryProjectStartedCycle)
+        {
+            int q = (int)(pair.Key >> 32);
+            int r = (int)(pair.Key & 0xFFFFFFFF);
+            Vector3Int cell = new Vector3Int(q, r, 0);
+
+            if (!worldGenerator.TryGetBuildingType(cell, out BuildingType building) || building != BuildingType.RecoveryProject)
+            {
+                toRemove.Add(pair.Key);
+                continue;
+            }
+
+            if (cycleNumber - pair.Value < recoveryProjectDurationCycles)
+            {
+                continue;
+            }
+
+            worldGenerator.TrySetBuildingType(cell, BuildingType.None);
+            toRemove.Add(pair.Key);
+        }
+
+        for (int i = 0; i < toRemove.Count; i++)
+        {
+            recoveryProjectStartedCycle.Remove(toRemove[i]);
+        }
+    }
+
+    private static long PackCoord(Vector3Int cell)
+    {
+        return ((long)cell.x << 32) ^ (uint)cell.y;
     }
 
     private FiniteEarthResourcePool CalculatePassiveIncome()
