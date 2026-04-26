@@ -46,7 +46,8 @@ public enum FiniteEarthActionType
     AcceptPact = 15,
     CancelPact = 16,
     ResearchTech = 17,
-    BuildBarracks = 18
+    BuildBarracks = 18,
+    RemoveBuilding = 19
 }
 
 [Serializable]

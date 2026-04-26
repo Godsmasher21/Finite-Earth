@@ -8,6 +8,21 @@ public sealed class AuthNonceRequest
 }
 
 [Serializable]
+public sealed class CredentialLoginRequest
+{
+    public string username;
+    public string password;
+}
+
+[Serializable]
+public sealed class CredentialSignupRequest
+{
+    public string username;
+    public string password;
+    public string confirmPassword;
+}
+
+[Serializable]
 public sealed class AuthNonceResponse
 {
     public string nonce;
@@ -28,6 +43,22 @@ public sealed class AuthVerifyResponse
     public string accessToken;
     public long expiresAtUnixMs;
     public string walletAddress;
+    public string username;
+    public string displayName;
+    public string authMode;
+}
+
+[Serializable]
+public sealed class GatewayErrorResponse
+{
+    public string error;
+}
+
+[Serializable]
+public sealed class GatewayHealthResponse
+{
+    public bool ok;
+    public bool spacetimeReady;
 }
 
 [Serializable]
@@ -35,6 +66,13 @@ public sealed class ActionIntentSubmitMessage
 {
     public string type = "ActionIntentSubmit";
     public ActionIntent intent;
+}
+
+[Serializable]
+public sealed class ActionIntentBatchSubmitMessage
+{
+    public string type = "ActionIntentBatchSubmit";
+    public ActionIntent[] intents;
 }
 
 [Serializable]
@@ -46,6 +84,10 @@ public sealed class ActionCommittedMessage
     public string intentId;
     public bool accepted;
     public string reason;
+    public string walletAddress;
+    public int actionType;
+    public int q;
+    public int r;
     public TileDelta[] tileDeltas;
     public PlayerDelta playerDelta;
     public GlobalDelta globalDelta;
@@ -64,6 +106,7 @@ public sealed class WorldSnapshotMessage
     public int actionsPerCycle;
     public WorldTileSnapshotMessage[] tiles;
     public WorldPlayerSnapshotMessage[] players;
+    public ClimateEventSnapshotMessage[] climateEvents;
 }
 
 [Serializable]
@@ -81,11 +124,33 @@ public sealed class WorldTileSnapshotMessage
 public sealed class WorldPlayerSnapshotMessage
 {
     public string walletAddress;
+    public string username;
+    public string displayName;
     public int ownedTilesCount;
     public int sustainabilityScore;
     public int actionsTaken;
     public int actionsRemaining;
     public long lastClientSeq;
+    public int wood;
+    public int food;
+    public int minerals;
+    public int researchPoints;
+    public bool techBasicForestry;
+    public bool techRenewableEnergy;
+    public bool techCarbonCapture;
+    public int ecoActions;
+    public int industrialActions;
+    public int agricultureActions;
+    public string reputation;
+}
+
+[Serializable]
+public sealed class ClimateEventSnapshotMessage
+{
+    public long id;
+    public int type;
+    public int startTick;
+    public int endTick;
 }
 
 [Serializable]
@@ -94,6 +159,10 @@ public sealed class CycleStartedMessage
     public string type = "CycleStarted";
     public int tick;
     public long startedAtUnixMs;
+    public int globalForestToken;
+    public int globalCarbonToken;
+    public WorldPlayerSnapshotMessage player;
+    public ClimateEventSnapshotMessage[] climateEvents;
 }
 
 [Serializable]
@@ -105,4 +174,35 @@ public sealed class CycleCommittedToChainMessage
     public int forestDelta;
     public int carbonDelta;
     public string transactionHash;
+}
+
+// Broadcast to all clients when any player's action changes tiles.
+[Serializable]
+public sealed class RemoteTileChangedMessage
+{
+    public string type = "RemoteTileChanged";
+    public string walletAddress;
+    public int tick;
+    public TileDelta[] tileDeltas;
+}
+
+// Sent when a new player connects to the session.
+[Serializable]
+public sealed class PlayerJoinedMessage
+{
+    public string type = "PlayerJoined";
+    public string walletAddress;
+    public string username;
+    public string displayName;
+    public int tick;
+}
+
+// Sent when a player disconnects from the session.
+[Serializable]
+public sealed class PlayerLeftMessage
+{
+    public string type = "PlayerLeft";
+    public string walletAddress;
+    public string username;
+    public string displayName;
 }

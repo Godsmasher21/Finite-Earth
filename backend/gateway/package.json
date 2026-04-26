@@ -5,23 +5,22 @@
   "type": "module",
   "scripts": {
     "dev": "tsx watch src/index.ts",
-    "start": "node dist/index.js",
-    "build": "tsc -p tsconfig.json"
+    "start": "node --experimental-specifier-resolution=node dist/index.js",
+    "build": "tsc -p tsconfig.json && node scripts/fix-esm-specifiers.mjs"
   },
   "dependencies": {
-    "better-sqlite3": "^11.10.0",
     "cors": "^2.8.5",
     "dotenv": "^16.6.1",
     "ethers": "^6.15.0",
     "express": "^4.21.2",
     "jsonwebtoken": "^9.0.2",
     "siwe": "^3.0.0",
+    "spacetimedb": "^2.1.0",
     "uuid": "^11.1.0",
     "ws": "^8.18.3",
     "zod": "^3.24.2"
   },
   "devDependencies": {
-    "@types/better-sqlite3": "^7.6.13",
     "@types/cors": "^2.8.19",
     "@types/express": "^4.17.23",
     "@types/jsonwebtoken": "^9.0.10",

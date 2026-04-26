@@ -65,6 +65,15 @@ public static class ActionCatalog
                 new Color(0.42f, 0.44f, 0.49f, 1f))
         },
         {
+            FiniteEarthActionType.RemoveBuilding,
+            new ActionRuleSpec(
+                FiniteEarthActionType.RemoveBuilding,
+                "Remove",
+                default,
+                default,
+                new Color(0.72f, 0.34f, 0.28f, 1f))
+        },
+        {
             FiniteEarthActionType.HarvestForest,
             new ActionRuleSpec(
                 FiniteEarthActionType.HarvestForest,

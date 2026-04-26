@@ -14,7 +14,8 @@ public class FiniteEarthGameOrchestrator : MonoBehaviour
     [SerializeField] private GameStateViewModel viewModel;
     [SerializeField] private ActionInputController inputController;
     [SerializeField] private ActionPanelPresenter actionPanel;
-    [SerializeField] private SpacetimeRealtimeClient realtimeClient;
+    [SerializeField] private SpacetimeClientManager stdbClient;
+    [SerializeField] private WalletSessionController walletSession;
     [SerializeField] private WorldCameraController worldCameraController;
     [SerializeField] private ArmyOverlayPointTop armyOverlay;
     [SerializeField] private bool runUniversalCycleLocallyWhenOffline = true;
@@ -23,17 +24,17 @@ public class FiniteEarthGameOrchestrator : MonoBehaviour
     [SerializeField] private bool rememberWalletSpawnLocally = true;
 
     [Header("Starting Resources")]
-    [SerializeField, Min(0)] private int startingWood = 5;
-    [SerializeField, Min(0)] private int startingFood = 5;
-    [SerializeField, Min(0)] private int startingMinerals = 5;
+    [SerializeField, Min(0)] private int startingWood = 6;
+    [SerializeField, Min(0)] private int startingFood = 8;
+    [SerializeField, Min(0)] private int startingMinerals = 4;
 
     [Header("Natural Recovery")]
     [SerializeField, Min(1)] private int deforestedToPlainsCycles = 3;
     [SerializeField, Min(1)] private int recoveryProjectCycles = 2;
 
     [Header("Passive Yield")]
-    [SerializeField, Min(0)] private int farmFoodPerCycle = 1;
-    [SerializeField, Min(0)] private int industryMineralsPerCycle = 1;
+    [SerializeField, Min(0f)] private float farmFoodPerCycle = 0.125f;
+    [SerializeField, Min(0f)] private float industryMineralsPerCycle = 0.05f;
     [SerializeField, Min(0f)] private float industryYieldOnBarren = 0.75f;
     [SerializeField, Min(0f)] private float industryYieldOnPlains = 1f;
     [SerializeField, Min(0f)] private float industryYieldOnMountain = 1.5f;
@@ -71,10 +72,10 @@ public class FiniteEarthGameOrchestrator : MonoBehaviour
     private readonly LocalPredictionEngine predictionEngine = new LocalPredictionEngine();
     private static readonly FiniteEarthActionType[] UiActions =
     {
-        FiniteEarthActionType.Claim,
         FiniteEarthActionType.BuildSettlement,
         FiniteEarthActionType.BuildBarracks,
         FiniteEarthActionType.BuildIndustry,
+        FiniteEarthActionType.RemoveBuilding,
         FiniteEarthActionType.HarvestForest,
         FiniteEarthActionType.Reforest,
         FiniteEarthActionType.Farm,
@@ -102,31 +103,54 @@ public class FiniteEarthGameOrchestrator : MonoBehaviour
     private readonly Dictionary<long, int> deforestedSinceTick = new Dictionary<long, int>();
     private readonly Dictionary<long, int> recoveryProjectUntilTick = new Dictionary<long, int>();
     private readonly Dictionary<long, int> miningCounts = new Dictionary<long, int>();
-    private readonly List<ArmyUnit> armies = new List<ArmyUnit>();
+    // Army state — STDB is the single source of truth.
+    // These three dicts hold only transient client-side overrides.
+    private readonly Dictionary<ulong, HexCoord> optimisticArmyPositions = new Dictionary<ulong, HexCoord>();
+    private readonly Dictionary<ulong, float>    armyLastMoveTimes        = new Dictionary<ulong, float>();
+    private readonly Dictionary<ulong, int>      armyStrengths            = new Dictionary<ulong, int>();
     private readonly List<ClimateEventInstance> activeEvents = new List<ClimateEventInstance>();
     private readonly List<ClimateTileHighlight> climateTileHighlights = new List<ClimateTileHighlight>();
     private readonly List<TradeOffer> tradeOffers = new List<TradeOffer>();
     private readonly List<DiplomacyPact> diplomacyPacts = new List<DiplomacyPact>();
     private readonly Dictionary<long, WildfirePatchState> activeWildfirePatches = new Dictionary<long, WildfirePatchState>();
+    private readonly HashSet<long> activeServerClimateEventIds = new HashSet<long>();
     private readonly Dictionary<long, int> capturePressure = new Dictionary<long, int>();
     private readonly Dictionary<long, string> ownerByTile = new Dictionary<long, string>();
+    private readonly Dictionary<string, string> playerLabelByWallet = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<string, FiniteEarthResourcePool> pactShareLedger = new Dictionary<string, FiniteEarthResourcePool>();
     private readonly List<ActionAvailability> lastActionStates = new List<ActionAvailability>();
+    private readonly HashSet<string> optimisticallyApplied = new HashSet<string>();
     private float woodBonusRemainder;
     private float passiveFoodRemainder;
     private float passiveMineralRemainder;
 
     public GameStateViewModel ViewModel => viewModel;
     public float CycleRemainingSeconds => Mathf.Max(0f, cycleRemainingSeconds);
-    public bool UsesLocalCycleClock => runUniversalCycleLocallyWhenOffline && (realtimeClient == null || !realtimeClient.IsConnected);
+    public bool UsesLocalCycleClock
+    {
+        get
+        {
+            if (!runUniversalCycleLocallyWhenOffline)
+            {
+                return false;
+            }
+
+            if (walletSession != null)
+            {
+                return walletSession.IsOfflineMode;
+            }
+
+            return stdbClient == null || !stdbClient.IsReady;
+        }
+    }
     public bool HasSelection => hasSelection;
     public HexCoord SelectedCoord => selectedCoord;
     public int SelectionCount => selectedCoords.Count > 0 ? selectedCoords.Count : (hasSelection ? 1 : 0);
     public IReadOnlyList<HexCoord> SelectedCoords => selectedCoords;
     public IReadOnlyList<ActionAvailability> LastActionStates => lastActionStates;
     public string ActiveWalletAddress => activeWalletAddress;
-    public int FarmFoodPerCycle => farmFoodPerCycle;
-    public int IndustryMineralsPerCycle => industryMineralsPerCycle;
+    public float FarmFoodPerCycle => farmFoodPerCycle;
+    public float IndustryMineralsPerCycle => industryMineralsPerCycle;
     public float IndustryYieldOnBarren => industryYieldOnBarren;
     public float IndustryYieldOnPlains => industryYieldOnPlains;
     public float IndustryYieldOnMountain => industryYieldOnMountain;
@@ -195,9 +219,14 @@ public class FiniteEarthGameOrchestrator : MonoBehaviour
             actionPanel = FindAnyObjectByType<ActionPanelPresenter>();
         }
 
-        if (realtimeClient == null)
+        if (stdbClient == null)
         {
-            realtimeClient = FindAnyObjectByType<SpacetimeRealtimeClient>();
+            stdbClient = FindAnyObjectByType<SpacetimeClientManager>();
+        }
+
+        if (walletSession == null)
+        {
+            walletSession = FindAnyObjectByType<WalletSessionController>();
         }
 
         if (worldCameraController == null)
@@ -223,8 +252,12 @@ public class FiniteEarthGameOrchestrator : MonoBehaviour
             return;
         }
 
-        worldGenerator.Generate();
+        if (!worldGenerator.IsGenerated)
+        {
+            worldGenerator.Generate();
+        }
         ownership.Initialize(worldGenerator);
+        ownership.SetAutomaticSettlementClaimsEnabled(UsesLocalCycleClock);
 
         worldAdapter = new UnityWorldAdapter(worldGenerator, ownership);
         resolver = new ActionResolver();
@@ -253,11 +286,6 @@ public class FiniteEarthGameOrchestrator : MonoBehaviour
         if (actionPanel != null)
         {
             actionPanel.ActionRequested += HandleActionRequested;
-        }
-
-        if (realtimeClient != null)
-        {
-            realtimeClient.ActionCommitted += HandleActionCommitted;
         }
 
         isInitialized = true;
@@ -439,10 +467,6 @@ public class FiniteEarthGameOrchestrator : MonoBehaviour
             actionPanel.ActionRequested -= HandleActionRequested;
         }
 
-        if (realtimeClient != null)
-        {
-            realtimeClient.ActionCommitted -= HandleActionCommitted;
-        }
     }
 
     public void HandleAuthenticatedPlayer(string walletAddress, bool createLocalStartingTerritory)
@@ -454,11 +478,19 @@ public class FiniteEarthGameOrchestrator : MonoBehaviour
 
         activeWalletAddress = walletAddress.Trim().ToLowerInvariant();
         hasAttemptedOfflineSpawnRecovery = false;
+        hasFocusedOwnedArea = false;
+        optimisticArmyPositions.Clear();
+        armyLastMoveTimes.Clear();
+        armyStrengths.Clear();
+        selectedArmyId = null;
+        armyMoveMode = false;
 
         if (viewModel != null)
         {
             viewModel.SetWalletAddress(walletAddress);
         }
+
+        worldAdapter?.SetLocalWalletAddress(activeWalletAddress);
 
         pendingAuthenticatedWallet = activeWalletAddress;
         pendingLocalBootstrap = createLocalStartingTerritory;
@@ -468,13 +500,18 @@ public class FiniteEarthGameOrchestrator : MonoBehaviour
             return;
         }
 
+        ownership.SetAutomaticSettlementClaimsEnabled(createLocalStartingTerritory || UsesLocalCycleClock);
+
         if (createLocalStartingTerritory)
         {
             BootstrapLocalTerritory(activeWalletAddress, true);
         }
         else
         {
-            FocusOwnedTerritoryIfAny(true);
+            ownerByTile.Clear();
+            ownership.ResetOwnership();
+            ownership.ClearRivalOwnership();
+            ClearCurrentSelection();
         }
 
         RefreshActionPanelState();
@@ -594,20 +631,27 @@ public class FiniteEarthGameOrchestrator : MonoBehaviour
     private bool TrySelectArmyAt(HexCoord coord, out string armyId)
     {
         armyId = string.Empty;
+        if (stdbClient == null || !stdbClient.IsReady || string.IsNullOrWhiteSpace(activeWalletAddress))
+            return false;
 
-        for (int i = 0; i < armies.Count; i++)
+        // Check optimistic positions first — army we just moved whose STDB row
+        // hasn't reflected the new position yet.
+        foreach (var kv in optimisticArmyPositions)
         {
-            ArmyUnit unit = armies[i];
-            if (!string.Equals(unit.ownerWallet, activeWalletAddress, StringComparison.OrdinalIgnoreCase))
-            {
-                continue;
-            }
+            if (kv.Value.q != coord.q || kv.Value.r != coord.r) continue;
+            var row = stdbClient.GetArmyById(kv.Key);
+            if (row == null) continue;
+            if (!string.Equals(row.Owner, activeWalletAddress, StringComparison.OrdinalIgnoreCase)) continue;
+            armyId = kv.Key.ToString();
+            return true;
+        }
 
-            if (unit.coord.q == coord.q && unit.coord.r == coord.r)
-            {
-                armyId = unit.id;
-                return true;
-            }
+        // Query STDB directly.
+        var stdbArmy = stdbClient.FindArmyAt(activeWalletAddress, coord.q, coord.r);
+        if (stdbArmy != null)
+        {
+            armyId = stdbArmy.Id.ToString();
+            return true;
         }
 
         return false;
@@ -615,31 +659,34 @@ public class FiniteEarthGameOrchestrator : MonoBehaviour
 
     private bool TryMoveArmy(string armyId, HexCoord target)
     {
-        int index = armies.FindIndex(unit => unit.id == armyId);
-        if (index < 0)
-        {
-            return false;
-        }
+        if (!ulong.TryParse(armyId, out ulong stdbId)) return false;
+        if (stdbClient == null || !stdbClient.IsReady) return false;
 
-        ArmyUnit unit = armies[index];
-        if (HexWorldGeneratorTilemap.HexDistance(unit.coord.ToVector3Int(), target.ToVector3Int()) != 1)
-        {
-            return false;
-        }
+        var row = stdbClient.GetArmyById(stdbId);
+        if (row == null) return false;
 
-        if (Time.unscaledTime - unit.lastMoveAt < armyMoveCooldownSeconds)
-        {
-            return false;
-        }
+        // Current position is optimistic override (if recent move pending) or STDB.
+        HexCoord currentPos = optimisticArmyPositions.TryGetValue(stdbId, out HexCoord opt)
+            ? opt
+            : new HexCoord(row.Q, row.R);
 
-        if (worldGenerator == null || !worldGenerator.TryGetTileType(target.ToVector3Int(), out TileType terrain) || !terrain.IsClaimable())
-        {
+        if (HexWorldGeneratorTilemap.HexDistance(currentPos.ToVector3Int(), target.ToVector3Int()) != 1)
             return false;
-        }
 
-        unit.coord = target;
-        unit.lastMoveAt = Time.unscaledTime;
-        armies[index] = unit;
+        float movedAt = armyLastMoveTimes.TryGetValue(stdbId, out float t) ? t : float.MinValue;
+        if (Time.unscaledTime - movedAt < armyMoveCooldownSeconds)
+            return false;
+
+        if (worldGenerator == null
+            || !worldGenerator.TryGetTileType(target.ToVector3Int(), out TileType terrain)
+            || !terrain.IsClaimable())
+            return false;
+
+        // Optimistic update for instant visual feedback.
+        optimisticArmyPositions[stdbId] = target;
+        armyLastMoveTimes[stdbId] = Time.unscaledTime;
+
+        stdbClient.SendArmyMove(stdbId, row.Owner ?? activeWalletAddress, target.q, target.r);
         RenderArmies();
         return true;
     }
@@ -788,16 +835,9 @@ public class FiniteEarthGameOrchestrator : MonoBehaviour
 
     private int CountOwnedArmies()
     {
-        int count = 0;
-        for (int i = 0; i < armies.Count; i++)
-        {
-            if (string.Equals(armies[i].ownerWallet, activeWalletAddress, StringComparison.OrdinalIgnoreCase))
-            {
-                count++;
-            }
-        }
-
-        return count;
+        if (stdbClient != null && stdbClient.IsReady)
+            return stdbClient.CountArmiesForWallet(activeWalletAddress);
+        return 0;
     }
 
     private void PostApplyLocalAction(FiniteEarthActionType actionType, HexCoord coord, ActionResolution resolution)
@@ -844,11 +884,6 @@ public class FiniteEarthGameOrchestrator : MonoBehaviour
             }
         }
 
-        if (actionType == FiniteEarthActionType.SpawnArmy)
-        {
-            TrySpawnArmy(coord);
-        }
-
         if (actionType == FiniteEarthActionType.Claim)
         {
             long key = PackCoord(coord.q, coord.r);
@@ -857,7 +892,8 @@ public class FiniteEarthGameOrchestrator : MonoBehaviour
 
         TrackReputation(actionType);
         ApplyForestClusterBonus();
-        RenderArmies();
+        // Army rendering is driven by ArmiesChanged event from STDB (SpawnArmy case)
+        // and explicit RenderArmies calls elsewhere; no local list to update here.
 
         if (!popupDelta.IsZero())
         {
@@ -867,33 +903,72 @@ public class FiniteEarthGameOrchestrator : MonoBehaviour
         ActionExecuted?.Invoke(actionType, Mathf.Max(1, resolution.tileDeltas?.Length ?? 1));
     }
 
-    private void TrySpawnArmy(HexCoord coord)
+    // Builds the render list from STDB with optimistic position overrides applied.
+    // Also expires stale optimistic entries (e.g. when a move was rejected server-side).
+    private System.Collections.Generic.List<ArmyUnit> GetArmyUnitsWithOptimistic()
     {
-        if (!CanSpawnArmyAt(coord))
+        if (stdbClient == null || !stdbClient.IsReady)
+            return new System.Collections.Generic.List<ArmyUnit>();
+
+        var list = stdbClient.GetArmyUnitsForRendering();
+        float now = Time.unscaledTime;
+
+        // Expire optimistic entries that are older than the cooldown window.
+        var expired = new System.Collections.Generic.List<ulong>();
+        foreach (var kv in optimisticArmyPositions)
         {
-            return;
+            if (!armyLastMoveTimes.TryGetValue(kv.Key, out float movedAt)
+                || now - movedAt > armyMoveCooldownSeconds + 5f)
+                expired.Add(kv.Key);
         }
+        foreach (var id in expired) optimisticArmyPositions.Remove(id);
 
-        ArmyUnit unit = new ArmyUnit
+        // Apply remaining optimistic overrides and clear entries STDB has confirmed.
+        for (int i = 0; i < list.Count; i++)
         {
-            id = Guid.NewGuid().ToString("N"),
-            ownerWallet = activeWalletAddress,
-            coord = coord,
-            strength = 1,
-            lastMoveAt = Time.unscaledTime - armyMoveCooldownSeconds
-        };
+            if (!ulong.TryParse(list[i].id, out ulong id)) continue;
+            if (!optimisticArmyPositions.TryGetValue(id, out HexCoord opt)) continue;
 
-        armies.Add(unit);
+            if (list[i].coord.q == opt.q && list[i].coord.r == opt.r)
+                optimisticArmyPositions.Remove(id); // STDB caught up — drop override
+            else
+                list[i].coord = opt;
+        }
+        return list;
     }
 
     private void RenderArmies()
     {
-        if (armyOverlay == null)
-        {
-            return;
-        }
+        if (armyOverlay == null) return;
+        armyOverlay.RenderArmies(GetArmyUnitsWithOptimistic(), ResolveArmyColor);
+    }
 
-        armyOverlay.RenderArmies(armies, ResolveArmyColor);
+    public void RenderAllArmies() => RenderArmies();
+
+    private void RevertOptimisticTile(int q, int r)
+    {
+        if (stdbClient == null || !stdbClient.IsReady) return;
+        SpacetimeDB.Types.TileRow? tile = stdbClient.GetTile(q, r);
+        if (tile == null) return;
+
+        // Re-apply the server's authoritative tile state to overwrite the bad optimistic render.
+        TileDelta delta = new TileDelta(
+            q, r,
+            (TileType)tile.Terrain, (TileType)tile.Terrain,
+            (BuildingType)tile.Building, (BuildingType)tile.Building,
+            ownerByTile.ContainsKey(PackCoord(q, r)),
+            tile.Owner ?? string.Empty,
+            (int)tile.LastUpdate);
+
+        HandleRemoteTileChanged(new RemoteTileChangedMessage
+        {
+            tileDeltas = new[] { delta }
+        });
+
+        // Also restore worldGenerator tilemap to server state
+        Vector3Int cell = new Vector3Int(q, r, 0);
+        worldGenerator.TrySetTileType(cell, (TileType)tile.Terrain);
+        worldGenerator.TrySetBuildingType(cell, (BuildingType)tile.Building);
     }
 
     public bool IsLocalWallet(string wallet)
@@ -930,6 +1005,90 @@ public class FiniteEarthGameOrchestrator : MonoBehaviour
         }
 
         return false;
+    }
+
+    public bool TryGetSelectedOwnerLabel(out string ownerLabel)
+    {
+        ownerLabel = "NEUTRAL";
+        if (!TryGetSelectedOwner(out string wallet))
+        {
+            return false;
+        }
+
+        ownerLabel = DescribeOwnerLabel(wallet);
+        return true;
+    }
+
+    public bool TryGetOwnerLabelAt(HexCoord coord, out string ownerLabel)
+    {
+        ownerLabel = "NEUTRAL";
+        if (!TryGetOwnerAt(coord, out string wallet))
+        {
+            return false;
+        }
+
+        ownerLabel = DescribeOwnerLabel(wallet);
+        return true;
+    }
+
+    public string DescribeOwnerLabel(string wallet)
+    {
+        if (string.IsNullOrWhiteSpace(wallet))
+        {
+            return "NEUTRAL";
+        }
+
+        if (IsLocalWallet(wallet))
+        {
+            return "YOU";
+        }
+
+        if (TryGetKnownPlayerLabel(wallet, out string playerLabel))
+        {
+            return playerLabel;
+        }
+
+        return FormatWalletLabel(wallet);
+    }
+
+    public void RememberPlayerIdentity(string walletAddress, string username, string displayName)
+    {
+        if (string.IsNullOrWhiteSpace(walletAddress))
+        {
+            return;
+        }
+
+        string resolvedLabel = string.IsNullOrWhiteSpace(displayName) ? username : displayName;
+        if (string.IsNullOrWhiteSpace(resolvedLabel))
+        {
+            playerLabelByWallet.Remove(walletAddress);
+            return;
+        }
+
+        playerLabelByWallet[walletAddress.Trim()] = resolvedLabel.Trim();
+    }
+
+    private bool TryGetKnownPlayerLabel(string wallet, out string playerLabel)
+    {
+        playerLabel = string.Empty;
+        if (string.IsNullOrWhiteSpace(wallet))
+        {
+            return false;
+        }
+
+        return playerLabelByWallet.TryGetValue(wallet.Trim(), out playerLabel)
+            && !string.IsNullOrWhiteSpace(playerLabel);
+    }
+
+    private static string FormatWalletLabel(string wallet)
+    {
+        string normalized = wallet.Trim();
+        if (normalized.Length <= 12 || (normalized.IndexOf('-') >= 0 && normalized.Length <= 24))
+        {
+            return normalized.ToUpperInvariant();
+        }
+
+        return $"{normalized.Substring(0, 6)}...{normalized.Substring(normalized.Length - 4)}".ToUpperInvariant();
     }
 
     public int GetResearchPoints()
@@ -1376,9 +1535,62 @@ public class FiniteEarthGameOrchestrator : MonoBehaviour
             return;
         }
 
+        if (actionType == FiniteEarthActionType.Claim)
+        {
+            RefreshActionPanelState();
+            return;
+        }
+
         if (!hasSelection)
         {
             RefreshActionPanelState();
+            return;
+        }
+
+        if (stdbClient != null && stdbClient.IsReady)
+        {
+            if (actionType == FiniteEarthActionType.SpawnArmy && !CanSpawnArmyAt(selectedCoord))
+            {
+                RefreshActionPanelState();
+                return;
+            }
+
+            if (selectedCoords.Count > 1)
+            {
+                HandleBatchActionRequested(actionType);
+                return;
+            }
+
+            ActionIntent realtimeIntent = viewModel.BuildIntent(actionType, selectedCoord);
+            ActionResolution realtimePredicted = predictionEngine.Predict(
+                resolver, realtimeIntent, viewModel.WorldState, viewModel.PlayerState, viewModel.WorldState.tick);
+
+            if (!realtimePredicted.accepted)
+            {
+                RefreshActionPanelState();
+                return;
+            }
+
+            if (!QueueRealtimeIntent(realtimeIntent))
+            {
+                RefreshActionPanelState();
+                return;
+            }
+
+            optimisticallyApplied.Add(realtimeIntent.intentId);
+            viewModel.ApplyResolution(realtimePredicted, worldAdapter);
+            PostApplyLocalAction(actionType, selectedCoord, realtimePredicted);
+            TrackDeforestedTransitions(realtimePredicted);
+            TrackRecoveryProjectTransitions(realtimePredicted);
+            ownership.RefreshOverlay();
+            RefreshActionPanelState();
+            ClearCurrentSelection();
+            return;
+        }
+
+        if (selectedCoords.Count > 1)
+        {
+            HandleBatchActionRequested(actionType);
             return;
         }
 
@@ -1394,32 +1606,7 @@ public class FiniteEarthGameOrchestrator : MonoBehaviour
             return;
         }
 
-        if (selectedCoords.Count > 1)
-        {
-            HandleBatchActionRequested(actionType);
-            return;
-        }
-
         ActionIntent intent = viewModel.BuildIntent(actionType, selectedCoord);
-        if (realtimeClient != null && realtimeClient.IsConnected)
-        {
-            ActionResolution precheck = resolver.Resolve(
-                intent,
-                viewModel.WorldState,
-                viewModel.PlayerState,
-                viewModel.WorldState.tick);
-
-            if (!precheck.accepted)
-            {
-                RefreshActionPanelState();
-                return;
-            }
-
-            _ = realtimeClient.SendIntentAsync(intent);
-            RefreshActionPanelState();
-            return;
-        }
-
         ActionResolution predicted = predictionEngine.Predict(
             resolver,
             intent,
@@ -1455,37 +1642,51 @@ public class FiniteEarthGameOrchestrator : MonoBehaviour
             return;
         }
 
-        if (realtimeClient != null && realtimeClient.IsConnected)
+        if (stdbClient != null && stdbClient.IsReady)
         {
-            int sent = 0;
+            var batchIntents = new List<ActionIntent>(selectedCoords.Count);
             for (int i = 0; i < selectedCoords.Count; i++)
             {
                 HexCoord coord = selectedCoords[i];
-                if (actionType == FiniteEarthActionType.Claim && IsClaimBlockedByPact(coord, out _))
-                {
-                    continue;
-                }
-                ActionIntent intent = viewModel.BuildIntent(actionType, coord);
-                ActionResolution precheck = resolver.Resolve(
-                    intent,
-                    viewModel.WorldState,
-                    viewModel.PlayerState,
-                    viewModel.WorldState.tick);
-
-                if (!precheck.accepted)
-                {
-                    continue;
-                }
-
-                _ = realtimeClient.SendIntentAsync(intent);
-                sent++;
+                batchIntents.Add(viewModel.BuildIntent(actionType, coord));
             }
 
-            if (sent == 0)
+            if (!QueueRealtimeIntents(batchIntents))
             {
+                RefreshActionPanelState();
+                return;
             }
 
-            RefreshActionPanelState();
+            bool appliedAny = false;
+            for (int i = 0; i < batchIntents.Count; i++)
+            {
+                ActionIntent batchIntent = batchIntents[i];
+                ActionResolution batchPredicted = predictionEngine.Predict(
+                    resolver, batchIntent, viewModel.WorldState, viewModel.PlayerState, viewModel.WorldState.tick);
+
+                if (!batchPredicted.accepted)
+                {
+                    continue;
+                }
+
+                optimisticallyApplied.Add(batchIntent.intentId);
+                viewModel.ApplyResolution(batchPredicted, worldAdapter);
+                PostApplyLocalAction(actionType, new HexCoord(batchIntent.q, batchIntent.r), batchPredicted);
+                TrackDeforestedTransitions(batchPredicted);
+                TrackRecoveryProjectTransitions(batchPredicted);
+                appliedAny = true;
+            }
+
+            if (appliedAny)
+            {
+                ownership.RefreshOverlay();
+                RefreshActionPanelState();
+                ClearCurrentSelection();
+            }
+            else
+            {
+                RefreshActionPanelState();
+            }
             return;
         }
 
@@ -1525,6 +1726,113 @@ public class FiniteEarthGameOrchestrator : MonoBehaviour
         RefreshActionPanelState();
     }
 
+    private bool QueueRealtimeIntent(ActionIntent intent)
+    {
+        if (intent.Equals(default(ActionIntent)))
+        {
+            return false;
+        }
+
+        return QueueRealtimeIntents(new[] { intent });
+    }
+
+    private bool QueueRealtimeIntents(IReadOnlyList<ActionIntent> intents)
+    {
+        if (stdbClient == null || !stdbClient.IsReady)
+        {
+            Debug.LogWarning("Action submit skipped: SpacetimeDB not ready.");
+            return false;
+        }
+
+        if (intents == null || intents.Count == 0)
+            return false;
+
+        // SpacetimeDB reducer calls are synchronous fire-and-forget — no async queue needed.
+        if (intents.Count == 1)
+        {
+            ActionIntent i = intents[0];
+            Debug.Log($"Submit intent: action={i.actionType} q={i.q} r={i.r} seq={i.clientSeq}");
+            stdbClient.SendIntent(i.intentId, i.walletAddress, i.clientSeq, (int)i.actionType, i.q, i.r);
+        }
+        else
+        {
+            string[] ids      = new string[intents.Count];
+            long[]   seqs     = new long[intents.Count];
+            int[]    types    = new int[intents.Count];
+            int[]    qs       = new int[intents.Count];
+            int[]    rs       = new int[intents.Count];
+            string   wallet   = intents[0].walletAddress;
+
+            for (int k = 0; k < intents.Count; k++)
+            {
+                ids[k]   = intents[k].intentId;
+                seqs[k]  = intents[k].clientSeq;
+                types[k] = (int)intents[k].actionType;
+                qs[k]    = intents[k].q;
+                rs[k]    = intents[k].r;
+            }
+
+            Debug.Log($"Submit batch: count={intents.Count}");
+            stdbClient.SendIntentBatch(ids, wallet, seqs, types, qs, rs);
+        }
+
+        return true;
+    }
+
+    public void HandleRemoteTileChanged(RemoteTileChangedMessage message)
+    {
+        if (message == null || message.tileDeltas == null || message.tileDeltas.Length == 0)
+        {
+            return;
+        }
+
+        for (int i = 0; i < message.tileDeltas.Length; i++)
+        {
+            TileDelta delta = message.tileDeltas[i];
+            Vector3Int cell = new Vector3Int(delta.q, delta.r, 0);
+
+            if (delta.nextTerrain != delta.previousTerrain)
+            {
+                worldGenerator.TrySetTileType(cell, delta.nextTerrain);
+            }
+
+            if (delta.nextBuilding != delta.previousBuilding)
+            {
+                worldGenerator.TrySetBuildingType(cell, delta.nextBuilding);
+            }
+
+            if (delta.ownerChanged)
+            {
+                long key = PackCoord(delta.q, delta.r);
+                string normalizedOwner = string.IsNullOrWhiteSpace(delta.ownerWallet)
+                    ? string.Empty
+                    : delta.ownerWallet.Trim().ToLowerInvariant();
+                ownerByTile[key] = normalizedOwner;
+
+                bool isLocalTile = !string.IsNullOrWhiteSpace(normalizedOwner)
+                    && !string.IsNullOrWhiteSpace(activeWalletAddress)
+                    && string.Equals(normalizedOwner, activeWalletAddress, StringComparison.OrdinalIgnoreCase);
+
+                if (isLocalTile)
+                {
+                    ownership.SetOwned(cell, true);
+                    ownership.SetRivalOwned(cell, string.Empty);
+                }
+                else
+                {
+                    ownership.SetOwned(cell, false);
+                    ownership.SetRivalOwned(cell, normalizedOwner);
+                }
+            }
+        }
+
+        ownership.RefreshOverlay();
+        // For brand-new players, EnsurePlayer bootstraps territory AFTER the initial
+        // snapshot (which had 0 tiles). This is the first time owned tiles appear, so
+        // attempt the camera zoom now that the overlay is populated.
+        FocusOwnedTerritoryIfAny(true);
+    }
+
     public void HandleCycleStarted(CycleStartedMessage cycle)
     {
         if (viewModel == null)
@@ -1533,6 +1841,54 @@ public class FiniteEarthGameOrchestrator : MonoBehaviour
         }
 
         int authoritativeTick = cycle != null ? cycle.tick : -1;
+        if (cycle != null && cycle.player != null)
+        {
+            if (viewModel.WorldState != null)
+            {
+                viewModel.WorldState.tick = authoritativeTick >= 0 ? authoritativeTick : viewModel.WorldState.tick + 1;
+                viewModel.WorldState.globalForestToken = cycle.globalForestToken;
+                viewModel.WorldState.globalCarbonToken = cycle.globalCarbonToken;
+                viewModel.WorldState.ecosystemScore = GameStateViewModel.ComputeEcosystemScore(
+                    viewModel.WorldState.globalForestToken,
+                    viewModel.WorldState.globalCarbonToken,
+                    viewModel.WorldState.initialForest,
+                    viewModel.WorldState.carbonCap);
+            }
+
+            if (viewModel.PlayerState != null)
+            {
+                WorldPlayerSnapshotMessage player = cycle.player;
+                viewModel.PlayerState.ownedTilesCount = player.ownedTilesCount;
+                viewModel.PlayerState.sustainabilityScore = player.sustainabilityScore;
+                viewModel.PlayerState.actionsTaken = player.actionsTaken;
+                viewModel.PlayerState.actionsRemaining = player.actionsRemaining;
+                viewModel.PlayerState.lastClientSeq = player.lastClientSeq;
+                viewModel.PlayerState.resources = new FiniteEarthResourcePool
+                {
+                    wood = player.wood,
+                    food = player.food,
+                    minerals = player.minerals
+                };
+                viewModel.PlayerState.researchPoints = player.researchPoints;
+                viewModel.PlayerState.techBasicForestry = player.techBasicForestry;
+                viewModel.PlayerState.techRenewableEnergy = player.techRenewableEnergy;
+                viewModel.PlayerState.techCarbonCapture = player.techCarbonCapture;
+                viewModel.PlayerState.ecoActions = player.ecoActions;
+                viewModel.PlayerState.industrialActions = player.industrialActions;
+                viewModel.PlayerState.agricultureActions = player.agricultureActions;
+                viewModel.PlayerState.reputationLabel = string.IsNullOrWhiteSpace(player.reputation)
+                    ? viewModel.PlayerState.reputationLabel
+                    : player.reputation;
+                viewModel.SyncClientSequence(player.lastClientSeq);
+            }
+
+            ApplyServerClimateSnapshot(cycle.climateEvents, authoritativeTick);
+            AdvanceTradeOffersForCycle();
+            cycleRemainingSeconds = GetCycleDurationSeconds();
+            RefreshActionPanelState();
+            return;
+        }
+
         viewModel.StartNewCycle(authoritativeTick);
         ApplyPassiveIncomeForCycle();
         AdvanceTradeOffersForCycle();
@@ -1543,55 +1899,110 @@ public class FiniteEarthGameOrchestrator : MonoBehaviour
         RefreshActionPanelState();
     }
 
-    private void HandleActionCommitted(ActionCommittedMessage committed)
+    public void ResetRealtimePendingState()
+    {
+        optimisticallyApplied.Clear();
+    }
+
+    public void HandleActionCommitted(ActionCommittedMessage committed)
     {
         if (committed == null || string.IsNullOrWhiteSpace(committed.intentId))
         {
             return;
         }
 
+        bool wasOptimistic = optimisticallyApplied.Remove(committed.intentId);
+        bool isLocalCommit = !string.IsNullOrWhiteSpace(committed.walletAddress)
+            && !string.IsNullOrWhiteSpace(activeWalletAddress)
+            && string.Equals(committed.walletAddress.Trim(), activeWalletAddress, StringComparison.OrdinalIgnoreCase);
+        TileDelta[] authoritativeTileDeltas = committed.tileDeltas;
+        if (!isLocalCommit && authoritativeTileDeltas != null && authoritativeTileDeltas.Length > 0)
+        {
+            authoritativeTileDeltas = Array.Empty<TileDelta>();
+        }
+
         ActionResolution authoritative = new ActionResolution(
             committed.accepted,
             committed.reason,
-            committed.tileDeltas,
+            authoritativeTileDeltas,
             committed.playerDelta,
             committed.globalDelta);
 
         if (!authoritative.accepted)
         {
+            if (wasOptimistic)
+            {
+                // Immediately revert the tile to its server-authoritative state instead of
+                // waiting up to 30 s for the next CycleStarted snapshot.
+                Debug.LogWarning($"Optimistic action rejected ({committed.reason}); reverting tile ({committed.q},{committed.r}) from STDB.");
+                RevertOptimisticTile(committed.q, committed.r);
+            }
+            RefreshActionPanelState();
             return;
         }
 
-        viewModel.ApplyResolution(authoritative, worldAdapter);
-        if (authoritative.tileDeltas != null && authoritative.tileDeltas.Length > 0)
+        if (viewModel?.WorldState != null)
         {
-            for (int i = 0; i < authoritative.tileDeltas.Length; i++)
+            viewModel.WorldState.tick = Mathf.Max(viewModel.WorldState.tick, committed.tick);
+        }
+
+        if (!wasOptimistic)
+        {
+            viewModel.ApplyResolution(authoritative, worldAdapter);
+            if (authoritative.tileDeltas != null && authoritative.tileDeltas.Length > 0)
             {
-                TileDelta delta = authoritative.tileDeltas[i];
-                if (!delta.ownerChanged)
+                for (int i = 0; i < authoritative.tileDeltas.Length; i++)
                 {
-                    continue;
+                    TileDelta delta = authoritative.tileDeltas[i];
+                    if (!delta.ownerChanged)
+                        continue;
+                    ownerByTile[PackCoord(delta.q, delta.r)] = string.IsNullOrWhiteSpace(delta.ownerWallet)
+                        ? string.Empty
+                        : delta.ownerWallet.Trim().ToLowerInvariant();
+                }
+            }
+
+            if (isLocalCommit)
+            {
+                FiniteEarthActionType committedActionType = (FiniteEarthActionType)committed.actionType;
+                TrackReputation(committedActionType);
+                ApplyForestClusterBonus();
+
+                FiniteEarthResourcePool popupDelta = authoritative.playerDelta.resourceDelta;
+                if (!popupDelta.IsZero())
+                {
+                    ResourcePopupRequested?.Invoke(new HexCoord(committed.q, committed.r), popupDelta);
                 }
 
-                long key = PackCoord(delta.q, delta.r);
-                ownerByTile[key] = delta.ownerWallet;
+                ActionExecuted?.Invoke(committedActionType, Mathf.Max(1, authoritative.tileDeltas?.Length ?? 1));
             }
+
+            TrackDeforestedTransitions(authoritative);
+            TrackRecoveryProjectTransitions(authoritative);
         }
-        TrackDeforestedTransitions(authoritative);
-        TrackRecoveryProjectTransitions(authoritative);
+
         ownership.RefreshOverlay();
         FocusOwnedTerritoryIfAny(false);
         RefreshActionPanelState();
     }
 
-    public void ApplyWorldSnapshot(WorldSnapshotMessage snapshot)
+    public bool ApplyWorldSnapshot(WorldSnapshotMessage snapshot)
     {
         if (snapshot == null || worldGenerator == null || ownership == null || viewModel == null || viewModel.WorldState == null)
         {
-            return;
+            return false;
         }
 
+        if (optimisticallyApplied.Count > 0)
+        {
+            return false;
+        }
+
+        EnsureWorldMatchesSnapshot(snapshot);
+        ownership.SetAutomaticSettlementClaimsEnabled(false);
+
         viewModel.WorldState.tick = snapshot.tick;
+        viewModel.WorldState.worldId = string.IsNullOrWhiteSpace(snapshot.worldId) ? viewModel.WorldState.worldId : snapshot.worldId;
         viewModel.WorldState.globalForestToken = snapshot.globalForestToken;
         viewModel.WorldState.globalCarbonToken = snapshot.globalCarbonToken;
         viewModel.WorldState.cycleSeconds = snapshot.cycleSeconds;
@@ -1613,9 +2024,11 @@ public class FiniteEarthGameOrchestrator : MonoBehaviour
 
         if (snapshot.players != null && viewModel.PlayerState != null)
         {
+            playerLabelByWallet.Clear();
             for (int i = 0; i < snapshot.players.Length; i++)
             {
                 WorldPlayerSnapshotMessage player = snapshot.players[i];
+                RememberPlayerIdentity(player.walletAddress, player.username, player.displayName);
                 if (!string.Equals(player.walletAddress, viewModel.PlayerState.walletAddress, StringComparison.OrdinalIgnoreCase))
                 {
                     continue;
@@ -1626,17 +2039,37 @@ public class FiniteEarthGameOrchestrator : MonoBehaviour
                 viewModel.PlayerState.actionsTaken = player.actionsTaken;
                 viewModel.PlayerState.actionsRemaining = player.actionsRemaining;
                 viewModel.PlayerState.lastClientSeq = player.lastClientSeq;
+                viewModel.PlayerState.resources = new FiniteEarthResourcePool
+                {
+                    wood = player.wood,
+                    food = player.food,
+                    minerals = player.minerals
+                };
+                viewModel.PlayerState.researchPoints = player.researchPoints;
+                viewModel.PlayerState.techBasicForestry = player.techBasicForestry;
+                viewModel.PlayerState.techRenewableEnergy = player.techRenewableEnergy;
+                viewModel.PlayerState.techCarbonCapture = player.techCarbonCapture;
+                viewModel.PlayerState.ecoActions = player.ecoActions;
+                viewModel.PlayerState.industrialActions = player.industrialActions;
+                viewModel.PlayerState.agricultureActions = player.agricultureActions;
+                viewModel.PlayerState.reputationLabel = string.IsNullOrWhiteSpace(player.reputation)
+                    ? viewModel.PlayerState.reputationLabel
+                    : player.reputation;
+                viewModel.SyncClientSequence(player.lastClientSeq);
                 break;
             }
         }
 
         if (snapshot.tiles == null || snapshot.tiles.Length == 0)
         {
-            return;
+            return true;
         }
 
         ownership.ResetOwnership();
+        ownership.ClearRivalOwnership();
         ownerByTile.Clear();
+
+        string localWallet = viewModel.PlayerState?.walletAddress?.Trim().ToLowerInvariant() ?? string.Empty;
 
         for (int i = 0; i < snapshot.tiles.Length; i++)
         {
@@ -1655,21 +2088,192 @@ public class FiniteEarthGameOrchestrator : MonoBehaviour
                 worldGenerator.TrySetBuildingType(cell, building);
             }
 
-            bool ownsTile = !string.IsNullOrWhiteSpace(tile.ownerWallet)
-                && !string.IsNullOrWhiteSpace(viewModel.PlayerState.walletAddress)
-                && string.Equals(tile.ownerWallet, viewModel.PlayerState.walletAddress, StringComparison.OrdinalIgnoreCase);
+            if (string.IsNullOrWhiteSpace(tile.ownerWallet))
+            {
+                continue;
+            }
 
-            if (ownsTile)
+            string tileOwner = tile.ownerWallet.Trim().ToLowerInvariant();
+            bool isLocalTile = !string.IsNullOrWhiteSpace(localWallet)
+                && string.Equals(tileOwner, localWallet, StringComparison.OrdinalIgnoreCase);
+
+            if (isLocalTile)
             {
                 ownership.SetOwned(cell, true);
+            }
+            else
+            {
+                ownership.SetRivalOwned(cell, tileOwner);
             }
         }
 
         RebuildDeforestedRegistryFromWorld(snapshot.tick);
         RebuildRecoveryProjectRegistryFromWorld(snapshot.tick);
+        ApplyServerClimateSnapshot(snapshot.climateEvents, snapshot.tick);
         ownership.RefreshOverlay();
-        FocusOwnedTerritoryIfAny(false);
+        FocusOwnedTerritoryIfAny(true);
         RefreshActionPanelState();
+        return true;
+    }
+
+    private void EnsureWorldMatchesSnapshot(WorldSnapshotMessage snapshot)
+    {
+        if (snapshot?.tiles == null || snapshot.tiles.Length == 0 || worldGenerator == null || ownership == null)
+        {
+            return;
+        }
+
+        int requiredWidth = 0;
+        int requiredHeight = 0;
+        for (int i = 0; i < snapshot.tiles.Length; i++)
+        {
+            WorldTileSnapshotMessage tile = snapshot.tiles[i];
+            requiredWidth = Mathf.Max(requiredWidth, tile.q + 1);
+            requiredHeight = Mathf.Max(requiredHeight, tile.r + 1);
+        }
+
+        if (requiredWidth <= 0 || requiredHeight <= 0)
+        {
+            return;
+        }
+
+        bool needsReload = worldGenerator.Width != requiredWidth
+            || worldGenerator.Height != requiredHeight
+            || worldGenerator.UsesProceduralDefaultWorld;
+        if (!needsReload)
+        {
+            // Even without a full reload, always reset focus so ApplyWorldSnapshot
+            // will re-evaluate and zoom to owned territory.
+            hasFocusedOwnedArea = false;
+            return;
+        }
+
+        var terrainMap = new TileType[requiredWidth, requiredHeight];
+        var buildingMap = new BuildingType[requiredWidth, requiredHeight];
+
+        for (int y = 0; y < requiredHeight; y++)
+        {
+            for (int x = 0; x < requiredWidth; x++)
+            {
+                terrainMap[x, y] = TileType.Plains;
+                buildingMap[x, y] = BuildingType.None;
+            }
+        }
+
+        for (int i = 0; i < snapshot.tiles.Length; i++)
+        {
+            WorldTileSnapshotMessage tile = snapshot.tiles[i];
+            if (tile.q < 0 || tile.q >= requiredWidth || tile.r < 0 || tile.r >= requiredHeight)
+            {
+                continue;
+            }
+
+            terrainMap[tile.q, tile.r] = TryParseTileType(tile.currentState, out TileType terrain)
+                ? terrain
+                : TileType.Plains;
+            buildingMap[tile.q, tile.r] = TryParseBuildingType(tile.buildingType, out BuildingType building)
+                ? building
+                : BuildingType.None;
+        }
+
+        worldGenerator.LoadSnapshotWorld(terrainMap, buildingMap);
+        ownership.Initialize(worldGenerator);
+        ownership.SetAutomaticSettlementClaimsEnabled(false);
+        hasFocusedOwnedArea = false;
+        ClearCurrentSelection();
+
+        worldCameraController?.ReframeToWorld();
+
+        if (worldAdapter == null)
+        {
+            worldAdapter = new UnityWorldAdapter(worldGenerator, ownership);
+        }
+        worldAdapter.SetLocalWalletAddress(activeWalletAddress);
+
+        if (viewModel?.WorldState != null)
+        {
+            viewModel.WorldState.query = worldAdapter;
+            viewModel.WorldState.settlementRadius = worldGenerator.SettlementRadius;
+        }
+    }
+
+    private void ApplyServerClimateSnapshot(ClimateEventSnapshotMessage[] snapshotEvents, int tick)
+    {
+        if (UsesLocalCycleClock)
+        {
+            return;
+        }
+
+        activeEvents.Clear();
+        climateTileHighlights.Clear();
+        activeWildfirePatches.Clear();
+
+        var nextIds = new HashSet<long>();
+        if (snapshotEvents == null || snapshotEvents.Length == 0)
+        {
+            activeServerClimateEventIds.Clear();
+            return;
+        }
+
+        for (int i = 0; i < snapshotEvents.Length; i++)
+        {
+            ClimateEventSnapshotMessage message = snapshotEvents[i];
+
+            // Skip events that have already expired — the table keeps historical rows.
+            if (message.endTick > 0 && message.endTick <= tick)
+                continue;
+
+            if (!TryParseClimateEventType(message.type, out ClimateEventType climateType))
+            {
+                continue;
+            }
+
+            nextIds.Add(message.id);
+            activeEvents.Add(new ClimateEventInstance
+            {
+                type = climateType,
+                startTick = message.startTick,
+                endTick = message.endTick
+            });
+
+            List<Vector3Int> highlightCells = GetServerClimateHighlightCells(climateType);
+            if (highlightCells.Count > 0)
+            {
+                RegisterClimateTileHighlights(climateType, highlightCells, message.endTick);
+            }
+
+            if (!activeServerClimateEventIds.Contains(message.id))
+            {
+                ClimateEventTriggered?.Invoke(climateType);
+            }
+        }
+
+        activeServerClimateEventIds.Clear();
+        foreach (long id in nextIds)
+        {
+            activeServerClimateEventIds.Add(id);
+        }
+
+        PruneExpiredClimateTileHighlights(tick);
+    }
+
+    private List<Vector3Int> GetServerClimateHighlightCells(ClimateEventType climateType)
+    {
+        switch (climateType)
+        {
+            case ClimateEventType.Heatwave:
+                return CollectTerrainCells(TileType.Farmland);
+            case ClimateEventType.Wildfire:
+                return CollectTerrainCells(TileType.Forest);
+            case ClimateEventType.Flood:
+                return CollectCellsAdjacentToTerrain(TileType.Water);
+            case ClimateEventType.IceMelt:
+                return CollectTerrainCells(TileType.Ice);
+            case ClimateEventType.DesertSpread:
+                return CollectTerrainCells(TileType.Plains, TileType.Forest, TileType.Farmland);
+            default:
+                return new List<Vector3Int>();
+        }
     }
 
     private float GetCycleDurationSeconds()
@@ -1697,8 +2301,8 @@ public class FiniteEarthGameOrchestrator : MonoBehaviour
         }
 
         int previewCount = hasSelection ? selectionCount : 0;
-        bool claimableSelection = false;
-        string claimReason = hasSelection ? "Select an action." : "Select a tile.";
+        bool selectionReady = false;
+        string selectionReason = hasSelection ? "Select an action." : "Select a tile.";
 
         for (int i = 0; i < UiActions.Length; i++)
         {
@@ -1758,11 +2362,11 @@ public class FiniteEarthGameOrchestrator : MonoBehaviour
                 }
 
                 affordableSelectionCount = ComputeAffordableSelectionCount(
-                    spec.cost,
+                    action,
                     viewModel.PlayerState.resources,
                     applicableSelectionCount);
                 actionable = applicableSelectionCount > 0;
-                FiniteEarthResourcePool totalSelectionCost = ScaleCost(spec.cost, applicableSelectionCount);
+                FiniteEarthResourcePool totalSelectionCost = GetPreviewSelectionCost(action, applicableSelectionCount);
                 affordableForSelection = viewModel.PlayerState.resources.CanAfford(totalSelectionCost);
 
                 if (applicableSelectionCount == 0)
@@ -1788,17 +2392,22 @@ public class FiniteEarthGameOrchestrator : MonoBehaviour
                 }
                 else
                 {
-                    reason = "Ready.";
+                    reason = action == FiniteEarthActionType.RemoveBuilding
+                        ? BuildRemovalRefundReason(previewCoord: selectedCoords.Count > 0 ? selectedCoords[0] : selectedCoord, applicableSelectionCount)
+                        : "Ready.";
                 }
             }
 
-            if (action == FiniteEarthActionType.Claim)
+            if (actionable && affordableForSelection)
             {
-                claimableSelection = actionable && affordableForSelection;
-                claimReason = reason;
+                selectionReady = true;
+            }
+            else if (!selectionReady && hasSelection && !string.IsNullOrWhiteSpace(reason) && !string.Equals(reason, "Ready.", StringComparison.OrdinalIgnoreCase))
+            {
+                selectionReason = reason;
             }
 
-            FiniteEarthResourcePool totalCost = ScaleCost(spec.cost, applicableSelectionCount);
+            FiniteEarthResourcePool totalCost = GetPreviewSelectionCost(action, applicableSelectionCount);
             if (actionPanel != null)
             {
                 actionPanel.SetActionState(
@@ -1826,7 +2435,7 @@ public class FiniteEarthGameOrchestrator : MonoBehaviour
 
         if (actionPanel != null)
         {
-            actionPanel.SetSelectionContext(hasSelection, selectedCoord, claimableSelection, claimReason, selectionCount);
+            actionPanel.SetSelectionContext(hasSelection, selectedCoord, selectionReady, selectionReason, selectionCount);
         }
     }
 
@@ -1841,8 +2450,77 @@ public class FiniteEarthGameOrchestrator : MonoBehaviour
         };
     }
 
-    private static int ComputeAffordableSelectionCount(
-        FiniteEarthResourcePool unitCost,
+    private FiniteEarthResourcePool GetPreviewSelectionCost(FiniteEarthActionType actionType, int applicableSelectionCount)
+    {
+        if (applicableSelectionCount <= 0 || !ActionCatalog.TryGet(actionType, out ActionRuleSpec spec))
+        {
+            return default;
+        }
+
+        if (actionType != FiniteEarthActionType.BuildSettlement)
+        {
+            return ScaleCost(spec.cost, applicableSelectionCount);
+        }
+
+        int currentSettlementCount = CountOwnedSettlements();
+        FiniteEarthResourcePool total = default;
+        for (int i = 0; i < applicableSelectionCount; i++)
+        {
+            total.wood += spec.cost.wood;
+            total.food += spec.cost.food + ((currentSettlementCount + i) * 2);
+            total.minerals += spec.cost.minerals;
+        }
+
+        return total;
+    }
+
+    private string BuildRemovalRefundReason(HexCoord previewCoord, int applicableSelectionCount)
+    {
+        if (worldGenerator == null)
+        {
+            return "Ready.";
+        }
+
+        FiniteEarthResourcePool refund = default;
+        int targetCount = Mathf.Max(1, applicableSelectionCount);
+        if (selectedCoords.Count > 1)
+        {
+            for (int i = 0; i < selectedCoords.Count; i++)
+            {
+                refund.Add(GetRemovalRefundForCoord(selectedCoords[i]));
+            }
+        }
+        else
+        {
+            refund = GetRemovalRefundForCoord(previewCoord);
+        }
+
+        if (refund.IsZero())
+        {
+            return "Ready.";
+        }
+
+        return targetCount > 1
+            ? $"Refund total: W{refund.wood} F{refund.food} O{refund.minerals}."
+            : $"Refund: W{refund.wood} F{refund.food} O{refund.minerals}.";
+    }
+
+    private FiniteEarthResourcePool GetRemovalRefundForCoord(HexCoord coord)
+    {
+        if (worldGenerator == null || !worldGenerator.TryGetBuildingType(coord.ToVector3Int(), out BuildingType building))
+        {
+            return default;
+        }
+
+        return building switch
+        {
+            BuildingType.Industry => new FiniteEarthResourcePool { minerals = 1 },
+            _ => default
+        };
+    }
+
+    private int ComputeAffordableSelectionCount(
+        FiniteEarthActionType actionType,
         FiniteEarthResourcePool available,
         int applicableSelectionCount)
     {
@@ -1851,6 +2529,33 @@ public class FiniteEarthGameOrchestrator : MonoBehaviour
             return 0;
         }
 
+        if (!ActionCatalog.TryGet(actionType, out ActionRuleSpec spec))
+        {
+            return 0;
+        }
+
+        if (actionType == FiniteEarthActionType.BuildSettlement)
+        {
+            int currentSettlementCount = CountOwnedSettlements();
+            FiniteEarthResourcePool spent = default;
+            int affordable = 0;
+            for (int i = 0; i < applicableSelectionCount; i++)
+            {
+                spent.wood += spec.cost.wood;
+                spent.food += spec.cost.food + ((currentSettlementCount + i) * 2);
+                spent.minerals += spec.cost.minerals;
+                if (!available.CanAfford(spent))
+                {
+                    break;
+                }
+
+                affordable++;
+            }
+
+            return affordable;
+        }
+
+        FiniteEarthResourcePool unitCost = spec.cost;
         int byWood = unitCost.wood <= 0 ? int.MaxValue : available.wood / unitCost.wood;
         int byFood = unitCost.food <= 0 ? int.MaxValue : available.food / unitCost.food;
         int byMinerals = unitCost.minerals <= 0 ? int.MaxValue : available.minerals / unitCost.minerals;
@@ -2130,8 +2835,6 @@ public class FiniteEarthGameOrchestrator : MonoBehaviour
             return;
         }
 
-        float baseMineralGain = 0f;
-
         foreach (Vector3Int cell in worldGenerator.EnumerateCells())
         {
             if (!ownership.IsOwned(cell))
@@ -2144,16 +2847,12 @@ public class FiniteEarthGameOrchestrator : MonoBehaviour
 
             if (terrain == TileType.Farmland)
             {
-                bool nearWater = worldGenerator.HasAdjacentTerrainType(cell, TileType.Water);
-                float bonus = nearWater ? adjacencyYieldBonus : 0f;
-                foodGain += farmFoodPerCycle * (1f + bonus);
+                foodGain += Mathf.Max(0f, farmFoodPerCycle);
             }
 
             if (building == BuildingType.Industry)
             {
-                float baseYield = Mathf.Max(0, industryMineralsPerCycle);
-                baseMineralGain += baseYield;
-                mineralGain += GetIndustryYieldPerCycle(cell, terrain);
+                mineralGain += Mathf.Max(0f, industryMineralsPerCycle);
             }
         }
 
@@ -2161,11 +2860,6 @@ public class FiniteEarthGameOrchestrator : MonoBehaviour
         {
             foodModifierPercent = -Mathf.Abs(heatwaveFoodPenalty) * 100f;
             foodGain *= Mathf.Clamp01(1f - heatwaveFoodPenalty);
-        }
-
-        if (baseMineralGain > 0.001f)
-        {
-            mineralsModifierPercent = ((mineralGain / baseMineralGain) - 1f) * 100f;
         }
     }
 
@@ -2258,7 +2952,7 @@ public class FiniteEarthGameOrchestrator : MonoBehaviour
 
     private void ApplyClimateEventsForCycle()
     {
-        if (viewModel?.WorldState == null || worldGenerator == null)
+        if (!UsesLocalCycleClock || viewModel?.WorldState == null || worldGenerator == null)
         {
             return;
         }
@@ -2338,6 +3032,31 @@ public class FiniteEarthGameOrchestrator : MonoBehaviour
             case 2: return 0.50f;
             case 1: return 0.30f;
             default: return 0f;
+        }
+    }
+
+    private static bool TryParseClimateEventType(int rawType, out ClimateEventType climateType)
+    {
+        switch (rawType)
+        {
+            case 0:
+                climateType = ClimateEventType.Heatwave;
+                return true;
+            case 1:
+                climateType = ClimateEventType.Wildfire;
+                return true;
+            case 2:
+                climateType = ClimateEventType.Flood;
+                return true;
+            case 3:
+                climateType = ClimateEventType.IceMelt;
+                return true;
+            case 4:
+                climateType = ClimateEventType.DesertSpread;
+                return true;
+            default:
+                climateType = default;
+                return false;
         }
     }
 
@@ -2909,6 +3628,31 @@ public class FiniteEarthGameOrchestrator : MonoBehaviour
 
     private List<Vector3Int> CollectTerrainCells(TileType terrainType)
     {
+        return CollectTerrainCells(new[] { terrainType });
+    }
+
+    private List<Vector3Int> CollectTerrainCells(params TileType[] terrainTypes)
+    {
+        var cells = new List<Vector3Int>();
+        if (worldGenerator == null || terrainTypes == null || terrainTypes.Length == 0)
+        {
+            return cells;
+        }
+
+        var allowed = new HashSet<TileType>(terrainTypes);
+        foreach (Vector3Int cell in worldGenerator.EnumerateCells())
+        {
+            if (worldGenerator.TryGetTileType(cell, out TileType terrain) && allowed.Contains(terrain))
+            {
+                cells.Add(cell);
+            }
+        }
+
+        return cells;
+    }
+
+    private List<Vector3Int> CollectCellsAdjacentToTerrain(TileType requiredNeighbor)
+    {
         var cells = new List<Vector3Int>();
         if (worldGenerator == null)
         {
@@ -2917,7 +3661,17 @@ public class FiniteEarthGameOrchestrator : MonoBehaviour
 
         foreach (Vector3Int cell in worldGenerator.EnumerateCells())
         {
-            if (worldGenerator.TryGetTileType(cell, out TileType terrain) && terrain == terrainType)
+            if (!worldGenerator.TryGetTileType(cell, out TileType terrain))
+            {
+                continue;
+            }
+
+            if (terrain == TileType.Water || terrain == TileType.Ice || terrain == TileType.Mountain)
+            {
+                continue;
+            }
+
+            if (worldGenerator.HasAdjacentTerrainType(cell, requiredNeighbor))
             {
                 cells.Add(cell);
             }
@@ -2965,10 +3719,11 @@ public class FiniteEarthGameOrchestrator : MonoBehaviour
         }
 
         var activeThisCycle = new HashSet<long>();
+        var armyList = GetArmyUnitsWithOptimistic();
 
-        for (int i = 0; i < armies.Count; i++)
+        for (int i = 0; i < armyList.Count; i++)
         {
-            ArmyUnit unit = armies[i];
+            ArmyUnit unit = armyList[i];
             if (!string.Equals(unit.ownerWallet, activeWalletAddress, StringComparison.OrdinalIgnoreCase))
             {
                 continue;
@@ -2996,7 +3751,7 @@ public class FiniteEarthGameOrchestrator : MonoBehaviour
             capturePressure[key] = pressure;
             activeThisCycle.Add(key);
 
-            if (pressure >= 3)
+            if (pressure >= 10)
             {
                 ownership.SetOwned(cell, true);
                 capturePressure.Remove(key);
@@ -3118,11 +3873,11 @@ public class FiniteEarthGameOrchestrator : MonoBehaviour
     {
         CalculatePassiveIncomePreview(out float foodGain, out float mineralGain, out float foodModifierPercent, out float mineralsModifierPercent);
         float cycleDuration = Mathf.Max(1f, GetCycleDurationSeconds());
-        int foodPerMinute = Mathf.RoundToInt(foodGain * 60f / cycleDuration);
-        int mineralsPerMinute = Mathf.RoundToInt(mineralGain * 60f / cycleDuration);
+        float foodPerMinute = foodGain * 60f / cycleDuration;
+        float mineralsPerMinute = mineralGain * 60f / cycleDuration;
 
         return new ResourceRateSnapshot(
-            0,
+            0f,
             mineralsPerMinute,
             foodPerMinute,
             0f,
@@ -3132,26 +3887,7 @@ public class FiniteEarthGameOrchestrator : MonoBehaviour
 
     public float GetIndustryYieldPerCycle(HexCoord coord)
     {
-        if (worldGenerator == null || !worldGenerator.TryGetTileType(coord.ToVector3Int(), out TileType terrain))
-        {
-            return Mathf.Max(0, industryMineralsPerCycle);
-        }
-
-        return GetIndustryYieldPerCycle(coord.ToVector3Int(), terrain);
-    }
-
-    private float GetIndustryYieldPerCycle(Vector3Int cell, TileType terrain)
-    {
-        float terrainMultiplier = terrain switch
-        {
-            TileType.Barren => industryYieldOnBarren,
-            TileType.Mountain => industryYieldOnMountain,
-            _ => industryYieldOnPlains
-        };
-
-        bool nearMountain = worldGenerator != null && worldGenerator.HasAdjacentTerrainType(cell, TileType.Mountain);
-        float adjacencyMultiplier = 1f + (nearMountain ? adjacencyYieldBonus : 0f);
-        return Mathf.Max(0f, industryMineralsPerCycle) * Mathf.Max(0f, terrainMultiplier) * adjacencyMultiplier;
+        return Mathf.Max(0f, industryMineralsPerCycle);
     }
 
     public string DescribeClimateEvent(ClimateEventType type)
@@ -3419,29 +4155,38 @@ public class FiniteEarthGameOrchestrator : MonoBehaviour
 
     public void RequestAction(FiniteEarthActionType actionType)
     {
+        Debug.Log($"Orchestrator.RequestAction: {actionType}");
         HandleActionRequested(actionType);
     }
 
     public bool TryGetArmyAt(HexCoord coord, out ArmyUnit unit, bool onlyLocal = false)
     {
-        for (int i = 0; i < armies.Count; i++)
+        unit = null;
+
+        // Check optimistic positions first.
+        foreach (var kv in optimisticArmyPositions)
         {
-            ArmyUnit candidate = armies[i];
-            if (candidate.coord.q != coord.q || candidate.coord.r != coord.r)
-            {
-                continue;
-            }
-
-            if (onlyLocal && !string.Equals(candidate.ownerWallet, activeWalletAddress, StringComparison.OrdinalIgnoreCase))
-            {
-                continue;
-            }
-
-            unit = candidate;
+            if (kv.Value.q != coord.q || kv.Value.r != coord.r) continue;
+            if (stdbClient == null) continue;
+            var row = stdbClient.GetArmyById(kv.Key);
+            if (row == null) continue;
+            if (onlyLocal && !string.Equals(row.Owner, activeWalletAddress, StringComparison.OrdinalIgnoreCase)) continue;
+            unit = new ArmyUnit { id = kv.Key.ToString(), ownerWallet = row.Owner ?? string.Empty, coord = kv.Value, strength = GetArmyStrength(kv.Key) };
             return true;
         }
 
-        unit = null;
+        // Query STDB list.
+        var list = stdbClient?.GetArmyUnitsForRendering();
+        if (list == null) return false;
+        for (int i = 0; i < list.Count; i++)
+        {
+            if (list[i].coord.q != coord.q || list[i].coord.r != coord.r) continue;
+            if (onlyLocal && !string.Equals(list[i].ownerWallet, activeWalletAddress, StringComparison.OrdinalIgnoreCase)) continue;
+            unit = list[i];
+            if (ulong.TryParse(unit.id, out ulong id)) unit.strength = GetArmyStrength(id);
+            return true;
+        }
+
         return false;
     }
 
@@ -3450,21 +4195,34 @@ public class FiniteEarthGameOrchestrator : MonoBehaviour
         unit = null;
         cooldownRemaining = 0f;
 
-        if (string.IsNullOrWhiteSpace(selectedArmyId))
-        {
+        if (string.IsNullOrWhiteSpace(selectedArmyId) || stdbClient == null || !stdbClient.IsReady)
             return false;
-        }
 
-        int index = armies.FindIndex(candidate => candidate.id == selectedArmyId);
-        if (index < 0)
+        if (!ulong.TryParse(selectedArmyId, out ulong stdbId)) return false;
+
+        var row = stdbClient.GetArmyById(stdbId);
+        if (row == null) return false;
+
+        HexCoord pos = optimisticArmyPositions.TryGetValue(stdbId, out HexCoord opt)
+            ? opt
+            : new HexCoord(row.Q, row.R);
+
+        unit = new ArmyUnit
         {
-            return false;
-        }
+            id          = selectedArmyId,
+            ownerWallet = row.Owner ?? string.Empty,
+            coord       = pos,
+            strength    = GetArmyStrength(stdbId),
+            lastMoveAt  = armyLastMoveTimes.TryGetValue(stdbId, out float t) ? t : 0f
+        };
 
-        unit = armies[index];
-        cooldownRemaining = Mathf.Max(0f, armyMoveCooldownSeconds - (Time.unscaledTime - unit.lastMoveAt));
+        float movedAt = armyLastMoveTimes.TryGetValue(stdbId, out float mt) ? mt : float.MinValue;
+        cooldownRemaining = Mathf.Max(0f, armyMoveCooldownSeconds - (Time.unscaledTime - movedAt));
         return true;
     }
+
+    private int GetArmyStrength(ulong id) =>
+        armyStrengths.TryGetValue(id, out int s) ? s : 1;
 
     public void ArmSelectedArmyMove()
     {
@@ -3512,21 +4270,16 @@ public class FiniteEarthGameOrchestrator : MonoBehaviour
     public bool ReinforceSelectedArmy()
     {
         if (!CanReinforceSelectedArmy(out FiniteEarthResourcePool cost, out _))
-        {
             return false;
-        }
 
-        int index = armies.FindIndex(candidate => candidate.id == selectedArmyId);
-        if (index < 0 || viewModel?.PlayerState == null)
-        {
+        if (!TryGetSelectedArmy(out ArmyUnit unit, out _) || viewModel?.PlayerState == null)
             return false;
-        }
 
-        ArmyUnit unit = armies[index];
-        unit.strength = Mathf.Clamp(unit.strength + 1, 1, MaxArmyStrength);
-        armies[index] = unit;
+        if (!ulong.TryParse(unit.id, out ulong stdbId)) return false;
+
+        int newStrength = Mathf.Clamp(unit.strength + 1, 1, MaxArmyStrength);
+        armyStrengths[stdbId] = newStrength;
         viewModel.PlayerState.resources.Spend(cost);
-        RenderArmies();
         ResourcePopupRequested?.Invoke(unit.coord, new FiniteEarthResourcePool { food = -cost.food, wood = -cost.wood, minerals = -cost.minerals });
         return true;
     }

@@ -24,6 +24,10 @@ public static class TileStateMachine
                 nextBuilding = BuildingType.Industry;
                 return true;
 
+            case FiniteEarthActionType.RemoveBuilding:
+                nextBuilding = BuildingType.None;
+                return true;
+
             case FiniteEarthActionType.HarvestForest:
                 nextTerrain = TileType.DeforestedForest;
                 return true;

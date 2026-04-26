@@ -324,8 +324,8 @@ public class AsciiTutorialPopupPresenter : MonoBehaviour
         body.text =
             "1) Left-click a tile (or drag to paint a line selection).\n" +
             "2) Choose a valid action from the right terminal panel.\n" +
-            "3) Claim + Settlement first, then expand.\n" +
-            "4) Claims only work inside settlement radius.\n" +
+            "3) Build settlements to expand your territory.\n" +
+            "4) Tiles inside settlement radius are claimed automatically.\n" +
             "5) Farms passively generate food each cycle.\n" +
             "6) Press H to show/hide this help.";
         body.gameObject.AddComponent<LayoutElement>().preferredHeight = 138f;

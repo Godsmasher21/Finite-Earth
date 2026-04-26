@@ -7,7 +7,7 @@ public sealed class WorldState
     public string worldId = "finite-earth-alpha";
     public int tick;
     public int cycleSeconds = 30;
-    public int actionsPerCycle = 3;
+    public int actionsPerCycle = 9999;
     public int settlementRadius = 3;
     public bool requireAdjacency = true;
     public bool requireSettlementRadius = true;
@@ -27,7 +27,7 @@ public sealed class PlayerState
     public int ownedTilesCount;
     public int sustainabilityScore;
     public int actionsTaken;
-    public int actionsRemaining = 3;
+    public int actionsRemaining = 9999;
     public long lastClientSeq;
     public FiniteEarthResourcePool resources;
     public int researchPoints;
@@ -41,17 +41,17 @@ public sealed class PlayerState
 }
 
 [Serializable]
-public readonly struct ActionIntent
+public struct ActionIntent
 {
-    public readonly string intentId;
-    public readonly string worldId;
-    public readonly string walletAddress;
-    public readonly long clientSeq;
-    public readonly FiniteEarthActionType actionType;
-    public readonly int q;
-    public readonly int r;
-    public readonly BuildingType buildingType;
-    public readonly long clientIssuedAtMs;
+    public string intentId;
+    public string worldId;
+    public string walletAddress;
+    public long clientSeq;
+    public FiniteEarthActionType actionType;
+    public int q;
+    public int r;
+    public BuildingType buildingType;
+    public long clientIssuedAtMs;
 
     public ActionIntent(
         string intentId,
@@ -98,17 +98,17 @@ public readonly struct ActionResolution
 }
 
 [Serializable]
-public readonly struct TileDelta
+public struct TileDelta
 {
-    public readonly int q;
-    public readonly int r;
-    public readonly TileType previousTerrain;
-    public readonly TileType nextTerrain;
-    public readonly BuildingType previousBuilding;
-    public readonly BuildingType nextBuilding;
-    public readonly bool ownerChanged;
-    public readonly string ownerWallet;
-    public readonly int lastUpdatedTick;
+    public int q;
+    public int r;
+    public TileType previousTerrain;
+    public TileType nextTerrain;
+    public BuildingType previousBuilding;
+    public BuildingType nextBuilding;
+    public bool ownerChanged;
+    public string ownerWallet;
+    public int lastUpdatedTick;
 
     public TileDelta(
         int q,
@@ -136,14 +136,14 @@ public readonly struct TileDelta
 }
 
 [Serializable]
-public readonly struct PlayerDelta
+public struct PlayerDelta
 {
-    public readonly string walletAddress;
-    public readonly int ownedTilesDelta;
-    public readonly int sustainabilityScoreDelta;
-    public readonly int actionsTakenDelta;
-    public readonly int actionsRemainingDelta;
-    public readonly FiniteEarthResourcePool resourceDelta;
+    public string walletAddress;
+    public int ownedTilesDelta;
+    public int sustainabilityScoreDelta;
+    public int actionsTakenDelta;
+    public int actionsRemainingDelta;
+    public FiniteEarthResourcePool resourceDelta;
 
     public PlayerDelta(
         string walletAddress,
@@ -163,11 +163,11 @@ public readonly struct PlayerDelta
 }
 
 [Serializable]
-public readonly struct GlobalDelta
+public struct GlobalDelta
 {
-    public readonly int forestDelta;
-    public readonly int carbonDelta;
-    public readonly int actionCount;
+    public int forestDelta;
+    public int carbonDelta;
+    public int actionCount;
 
     public GlobalDelta(int forestDelta, int carbonDelta, int actionCount)
     {

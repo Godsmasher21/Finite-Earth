@@ -138,7 +138,7 @@ public class ActionConsolePresenter : MonoBehaviour
 
             var view = new ActionButtonView
             {
-                actionType = FiniteEarthActionType.Claim,
+                actionType = FiniteEarthActionType.BuildSettlement,
                 button = button,
                 background = bg,
                 accentBar = accent,

@@ -4,11 +4,19 @@ public sealed class UnityWorldAdapter : IResolverWorldQuery, IResolverWorldMutat
 {
     private readonly HexWorldGeneratorTilemap worldGenerator;
     private readonly OwnershipOverlayPointTop ownership;
+    private string localWalletAddress = string.Empty;
 
     public UnityWorldAdapter(HexWorldGeneratorTilemap worldGenerator, OwnershipOverlayPointTop ownership)
     {
         this.worldGenerator = worldGenerator;
         this.ownership = ownership;
+    }
+
+    public void SetLocalWalletAddress(string walletAddress)
+    {
+        localWalletAddress = string.IsNullOrWhiteSpace(walletAddress)
+            ? string.Empty
+            : walletAddress.Trim().ToLowerInvariant();
     }
 
     public bool TryGetTileType(HexCoord coord, out TileType tileType)
@@ -58,6 +66,11 @@ public sealed class UnityWorldAdapter : IResolverWorldQuery, IResolverWorldMutat
         return worldGenerator != null && worldGenerator.IsWithinSettlementRadius(coord.ToVector3Int(), radius);
     }
 
+    public bool IsOnSettlementRadiusRing(HexCoord coord, int radius)
+    {
+        return worldGenerator != null && worldGenerator.IsOnSettlementRadiusRing(coord.ToVector3Int(), radius);
+    }
+
     public bool HasAdjacentTerrainType(HexCoord coord, TileType requiredType)
     {
         return worldGenerator != null && worldGenerator.HasAdjacentTerrainType(coord.ToVector3Int(), requiredType);
@@ -71,6 +84,30 @@ public sealed class UnityWorldAdapter : IResolverWorldQuery, IResolverWorldMutat
     public int GetOwnedCount(string walletAddress)
     {
         return ownership != null ? ownership.GetOwnedCount() : 0;
+    }
+
+    public int CountOwnedBuildings(string walletAddress, BuildingType buildingType)
+    {
+        if (worldGenerator == null || ownership == null)
+        {
+            return 0;
+        }
+
+        int count = 0;
+        foreach (Vector3Int cell in worldGenerator.EnumerateCells())
+        {
+            if (!ownership.IsOwned(cell))
+            {
+                continue;
+            }
+
+            if (worldGenerator.TryGetBuildingType(cell, out BuildingType current) && current == buildingType)
+            {
+                count++;
+            }
+        }
+
+        return count;
     }
 
     public int CountTilesOfType(TileType type)
@@ -95,7 +132,22 @@ public sealed class UnityWorldAdapter : IResolverWorldQuery, IResolverWorldMutat
             return;
         }
 
-        ownership.SetOwned(coord.ToVector3Int(), isOwned);
+        Vector3Int cell = coord.ToVector3Int();
+        if (!isOwned)
+        {
+            ownership.SetOwned(cell, false);
+            ownership.SetRivalOwned(cell, string.Empty);
+            return;
+        }
+
+        string normalizedWallet = string.IsNullOrWhiteSpace(walletAddress)
+            ? string.Empty
+            : walletAddress.Trim().ToLowerInvariant();
+        bool isLocalOwner = !string.IsNullOrWhiteSpace(localWalletAddress)
+            && string.Equals(normalizedWallet, localWalletAddress, System.StringComparison.OrdinalIgnoreCase);
+
+        ownership.SetOwned(cell, isLocalOwner);
+        ownership.SetRivalOwned(cell, isLocalOwner ? string.Empty : normalizedWallet);
     }
 
     public bool TrySetTileType(HexCoord coord, TileType tileType)

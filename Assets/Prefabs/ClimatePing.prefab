@@ -11,7 +11,7 @@ GameObject:
   - component: {fileID: 400000}
   - component: {fileID: 103341070158485846}
   m_Layer: 0
-  m_Name: CimatePing
+  m_Name: ClimatePing
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

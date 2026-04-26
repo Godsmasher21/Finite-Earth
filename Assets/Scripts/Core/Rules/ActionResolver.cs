@@ -19,12 +19,14 @@ public sealed class ActionResolver : IActionResolver
             return Reject("Unsupported action.");
         }
 
+        FiniteEarthResourcePool effectiveCost = GetEffectiveCost(intent.actionType, spec.cost, state, intent.walletAddress);
+
         if (intent.actionType == FiniteEarthActionType.EndTurn)
         {
             return Reject("Manual end turn is disabled. Cycle resolution is timer-driven.");
         }
 
-        if (!player.resources.CanAfford(spec.cost))
+        if (!player.resources.CanAfford(effectiveCost))
         {
             return Reject($"Not enough resources for {spec.label}.");
         }
@@ -73,9 +75,13 @@ public sealed class ActionResolver : IActionResolver
             : Array.Empty<TileDelta>();
 
         FiniteEarthResourcePool resourceDelta = spec.reward;
-        resourceDelta.wood -= spec.cost.wood;
-        resourceDelta.food -= spec.cost.food;
-        resourceDelta.minerals -= spec.cost.minerals;
+        resourceDelta.wood -= effectiveCost.wood;
+        resourceDelta.food -= effectiveCost.food;
+        resourceDelta.minerals -= effectiveCost.minerals;
+        if (intent.actionType == FiniteEarthActionType.RemoveBuilding)
+        {
+            resourceDelta = GetRemovalRefund(building);
+        }
 
         int beforeCarbon = terrain.GetCarbonValue() + building.GetCarbonModifier();
         int afterCarbon = nextTerrain.GetCarbonValue() + nextBuilding.GetCarbonModifier();
@@ -168,6 +174,11 @@ public sealed class ActionResolver : IActionResolver
             case FiniteEarthActionType.BuildSettlement:
                 if (building != BuildingType.None) { reason = "Building already exists."; return false; }
                 if (terrain != TileType.Plains) { reason = "Settlement requires plains."; return false; }
+                if (state.requireSettlementRadius && state.query.HasAnySettlement() && !state.query.IsOnSettlementRadiusRing(coord, state.settlementRadius))
+                {
+                    reason = $"Settlement must be placed on the outer ring ({state.settlementRadius}) of existing settlement influence.";
+                    return false;
+                }
                 return true;
             case FiniteEarthActionType.BuildBarracks:
                 if (building != BuildingType.None) { reason = "Building already exists."; return false; }
@@ -178,6 +189,13 @@ public sealed class ActionResolver : IActionResolver
                 if (terrain != TileType.Barren && terrain != TileType.Plains && terrain != TileType.Mountain)
                 {
                     reason = "Industry requires barren, plains, or mountain terrain.";
+                    return false;
+                }
+                return true;
+            case FiniteEarthActionType.RemoveBuilding:
+                if (building != BuildingType.Industry)
+                {
+                    reason = "Only industry can be dismantled.";
                     return false;
                 }
                 return true;
@@ -217,6 +235,35 @@ public sealed class ActionResolver : IActionResolver
                 reason = "Unsupported action.";
                 return false;
         }
+    }
+
+    private static FiniteEarthResourcePool GetRemovalRefund(BuildingType building)
+    {
+        return building switch
+        {
+            BuildingType.Industry => new FiniteEarthResourcePool { minerals = 1 },
+            _ => default
+        };
+    }
+
+    private static FiniteEarthResourcePool GetEffectiveCost(
+        FiniteEarthActionType actionType,
+        FiniteEarthResourcePool baseCost,
+        WorldState state,
+        string walletAddress)
+    {
+        if (actionType != FiniteEarthActionType.BuildSettlement || state?.query == null)
+        {
+            return baseCost;
+        }
+
+        int ownedSettlements = state.query.CountOwnedBuildings(walletAddress, BuildingType.Settlement);
+        return new FiniteEarthResourcePool
+        {
+            wood = baseCost.wood,
+            food = baseCost.food + (Math.Max(0, ownedSettlements) * 2),
+            minerals = baseCost.minerals
+        };
     }
 
     private static ActionResolution Reject(string reason)

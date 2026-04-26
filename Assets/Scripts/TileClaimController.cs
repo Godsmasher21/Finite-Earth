@@ -19,12 +19,12 @@ public class TileClaimController : MonoBehaviour
     [SerializeField] private HexWorldGeneratorTilemap worldGenerator;
 
     [Header("Starting Resources")]
-    [SerializeField, Min(0)] private int startingWood = 5;
-    [SerializeField, Min(0)] private int startingFood = 5;
-    [SerializeField, Min(0)] private int startingMinerals = 5;
+    [SerializeField, Min(0)] private int startingWood = 6;
+    [SerializeField, Min(0)] private int startingFood = 8;
+    [SerializeField, Min(0)] private int startingMinerals = 4;
 
     [Header("Action Economy")]
-    [SerializeField, Min(1)] private int maxActionsPerTurn = 3;
+    [SerializeField, Min(1)] private int maxActionsPerTurn = 9999;
     [SerializeField] private bool requireAdjacency = true;
     [SerializeField] private bool requireSettlementRadius = true;
     [SerializeField, Min(1)] private int settlementRadiusOverride = 3;
@@ -203,12 +203,15 @@ public class TileClaimController : MonoBehaviour
         EnsureComponent<WorldCameraController>();
         EnsureComponent<ArmyOverlayPointTop>();
         EnsureComponent<ClimateEventOverlayPointTop>();
-        EnsureComponent<SpacetimeRealtimeClient>();
+        EnsureComponent<SpacetimeClientManager>();
         EnsureComponent<ThirdwebBridge>();
         EnsureComponent<WalletSessionController>();
         EnsureComponent<FiniteEarthGameOrchestrator>();
         EnsureComponent<NetworkSessionCoordinator>();
-        EnsureComponent<CommandTableHudPresenter>();
+        if (FindAnyObjectByType<CommandTableHudPresenter>() == null)
+        {
+            EnsureComponent<CommandTableHudPresenter>();
+        }
         EnsureComponent<ActionPanelPresenter>();
         EnsureComponent<AsciiHudPresenter>();
         EnsureComponent<AsciiMarketDiplomacyPresenter>();

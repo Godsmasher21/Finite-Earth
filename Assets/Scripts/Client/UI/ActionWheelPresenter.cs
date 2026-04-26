@@ -3,9 +3,26 @@ using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.EventSystems;
 
 public class ActionWheelPresenter : MonoBehaviour
 {
+    private sealed class WheelClickRelay : MonoBehaviour, IPointerClickHandler
+    {
+        public System.Action callback;
+        public bool acceptClicks;
+
+        public void OnPointerClick(PointerEventData eventData)
+        {
+            if (!acceptClicks || eventData == null || eventData.button != PointerEventData.InputButton.Left)
+            {
+                return;
+            }
+
+            callback?.Invoke();
+        }
+    }
+
     private sealed class WheelButton
     {
         public RectTransform root;
@@ -17,6 +34,7 @@ public class ActionWheelPresenter : MonoBehaviour
         public TMP_Text label;
         public TMP_Text cost;
         public TooltipTrigger tooltip;
+        public WheelClickRelay relay;
         public FiniteEarthActionType actionType;
         public bool hasActionType;
     }
@@ -34,6 +52,28 @@ public class ActionWheelPresenter : MonoBehaviour
     private Vector2[] slotOffsets;
     private Action<FiniteEarthActionType> actionHandler;
     private TooltipPresenter tooltip;
+
+    public bool IsInitialized => wheelRoot != null && canvasGroup != null && canvasRect != null;
+
+    public void ResetRuntimeWheel()
+    {
+        buttons.Clear();
+
+        if (wheelRoot != null)
+        {
+            if (Application.isPlaying)
+            {
+                Destroy(wheelRoot.gameObject);
+            }
+            else
+            {
+                DestroyImmediate(wheelRoot.gameObject);
+            }
+        }
+
+        wheelRoot = null;
+        canvasGroup = null;
+    }
 
     public void Initialize(RectTransform canvasRoot, TMP_FontAsset fontAsset, Sprite hexButtonSprite, TooltipPresenter tooltipPresenter, Action<FiniteEarthActionType> handler)
     {
@@ -97,6 +137,22 @@ public class ActionWheelPresenter : MonoBehaviour
     private void BuildButtons()
     {
         buttons.Clear();
+        if (wheelRoot != null)
+        {
+            for (int i = wheelRoot.childCount - 1; i >= 0; i--)
+            {
+                Transform child = wheelRoot.GetChild(i);
+                if (Application.isPlaying)
+                {
+                    Destroy(child.gameObject);
+                }
+                else
+                {
+                    DestroyImmediate(child.gameObject);
+                }
+            }
+        }
+
         slotOffsets = new[]
         {
             new Vector2(0f, radius),
@@ -173,6 +229,7 @@ public class ActionWheelPresenter : MonoBehaviour
         Button button = root.gameObject.AddComponent<Button>();
         button.transition = Selectable.Transition.ColorTint;
         button.targetGraphic = hitArea;
+        WheelClickRelay relay = root.gameObject.AddComponent<WheelClickRelay>();
 
         ColorBlock colors = button.colors;
         colors.normalColor = Color.white;
@@ -275,7 +332,8 @@ public class ActionWheelPresenter : MonoBehaviour
             labelPlate = plate,
             label = label,
             cost = cost,
-            tooltip = trigger
+            tooltip = trigger,
+            relay = relay
         };
     }
 
@@ -324,13 +382,19 @@ public class ActionWheelPresenter : MonoBehaviour
 
         if (building == BuildingType.Settlement)
         {
-            list.Add(BuildPlaceholder("Expand", "Settlement expansion not implemented yet."));
+            list.Add(BuildPlaceholder("Anchored", "Settlements are permanent anchors. Build the next one on the bright outer ring."));
+            return list;
+        }
+
+        if (building == BuildingType.Industry)
+        {
+            list.Add(BuildRemovalAction(building, stateLookup));
             return list;
         }
 
         if (!isOwned)
         {
-            TryAddAction(list, FiniteEarthActionType.Claim, stateLookup);
+            list.Add(BuildPlaceholder("Auto", "No manual claim step. Build a settlement closer to extend control here."));
             return list;
         }
 
@@ -431,13 +495,43 @@ public class ActionWheelPresenter : MonoBehaviour
         });
     }
 
+    private WheelAction BuildRemovalAction(BuildingType building, Dictionary<FiniteEarthActionType, ActionAvailability> lookup)
+    {
+        lookup.TryGetValue(FiniteEarthActionType.RemoveBuilding, out ActionAvailability state);
+        ActionCatalog.TryGet(FiniteEarthActionType.RemoveBuilding, out ActionRuleSpec spec);
+
+        FiniteEarthResourcePool refund = building switch
+        {
+            BuildingType.Industry => new FiniteEarthResourcePool { minerals = 1 },
+            _ => default
+        };
+
+        string defaultReason = "Dismantle this industry and recover part of the cost.";
+        string reason = string.IsNullOrWhiteSpace(state.reason) || string.Equals(state.reason, "Ready.", StringComparison.OrdinalIgnoreCase)
+            ? defaultReason
+            : state.reason;
+
+        return new WheelAction
+        {
+            label = spec.label,
+            hasActionType = true,
+            actionType = FiniteEarthActionType.RemoveBuilding,
+            interactable = state.isInteractable,
+            cost = default,
+            displayCost = refund,
+            showCost = true,
+            reason = reason,
+            accent = spec.accent
+        };
+    }
+
     private static WheelAction BuildPlaceholder(string label, string reason)
     {
         return new WheelAction
         {
             label = label,
             hasActionType = false,
-            actionType = FiniteEarthActionType.Claim,
+            actionType = FiniteEarthActionType.BuildSettlement,
             interactable = false,
             cost = default,
             displayCost = default,
@@ -466,11 +560,8 @@ public class ActionWheelPresenter : MonoBehaviour
             button.hasActionType = action.hasActionType;
             button.actionType = action.actionType;
             button.label.text = action.label.ToUpperInvariant();
-            button.cost.text = action.showCost
-                ? (action.displayCost.IsZero()
-                    ? "[FREE]"
-                    : $"[W{action.displayCost.wood} F{action.displayCost.food} M{action.displayCost.minerals}]")
-                : string.Empty;
+            string economyText = BuildEconomyText(action);
+            button.cost.text = action.showCost ? economyText : string.Empty;
 
             Color disabledFrame = new Color(0.24f, 0.32f, 0.28f, 0.68f);
             Color disabledFill = new Color(0.04f, 0.08f, 0.07f, 0.96f);
@@ -497,13 +588,17 @@ public class ActionWheelPresenter : MonoBehaviour
 
             button.button.onClick.RemoveAllListeners();
             button.button.interactable = action.interactable && (action.hasActionType || action.onClick != null);
+            button.relay.callback = null;
+            button.relay.acceptClicks = false;
             if (action.hasActionType)
             {
-                button.button.onClick.AddListener(() => actionHandler?.Invoke(action.actionType));
+                button.relay.callback = () => actionHandler?.Invoke(action.actionType);
+                button.relay.acceptClicks = true;
             }
             else if (action.onClick != null)
             {
-                button.button.onClick.AddListener(() => action.onClick.Invoke());
+                button.relay.callback = () => action.onClick.Invoke();
+                button.relay.acceptClicks = true;
             }
 
             if (button.tooltip != null)
@@ -520,21 +615,53 @@ public class ActionWheelPresenter : MonoBehaviour
                     continue;
                 }
 
-                string costLine = action.showCost
-                    ? (action.displayCost.IsZero() ? "[FREE]" : $"[W{action.displayCost.wood} F{action.displayCost.food} M{action.displayCost.minerals}]")
-                    : string.Empty;
+                string costLine = action.showCost ? economyText : string.Empty;
                 if (!string.IsNullOrWhiteSpace(costLine))
                 {
-                    button.tooltip.tooltipText = string.IsNullOrWhiteSpace(reasonText)
-                        ? costLine
-                        : $"{reasonText.ToUpperInvariant()}\n{costLine}";
+                    button.tooltip.tooltipText = BuildTooltipText(action.label, reasonText, costLine);
                 }
                 else
                 {
-                    button.tooltip.tooltipText = reasonText.ToUpperInvariant();
+                    button.tooltip.tooltipText = BuildTooltipText(action.label, reasonText, string.Empty);
                 }
             }
         }
+    }
+
+    private static string BuildEconomyText(WheelAction action)
+    {
+        if (!action.showCost)
+        {
+            return string.Empty;
+        }
+
+        if (action.actionType == FiniteEarthActionType.RemoveBuilding)
+        {
+            return action.displayCost.IsZero()
+                ? "[NO REFUND]"
+                : $"[+W{action.displayCost.wood} +F{action.displayCost.food} +M{action.displayCost.minerals}]";
+        }
+
+        return action.displayCost.IsZero()
+            ? "[FREE]"
+            : $"[W{action.displayCost.wood} F{action.displayCost.food} M{action.displayCost.minerals}]";
+    }
+
+    private static string BuildTooltipText(string label, string reasonText, string economyText)
+    {
+        string title = string.IsNullOrWhiteSpace(label) ? "ACTION" : label.ToUpperInvariant();
+        string body = string.IsNullOrWhiteSpace(reasonText) ? string.Empty : reasonText.Trim();
+
+        if (string.IsNullOrWhiteSpace(body))
+        {
+            return string.IsNullOrWhiteSpace(economyText)
+                ? title
+                : $"{title}\n{economyText}";
+        }
+
+        return string.IsNullOrWhiteSpace(economyText)
+            ? $"{title}\n{body}"
+            : $"{title}\n{body}\n{economyText}";
     }
 
     private static int[] ResolveSlotOrder(int count)

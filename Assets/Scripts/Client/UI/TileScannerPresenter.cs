@@ -68,6 +68,12 @@ public class TileScannerPresenter : MonoBehaviour
         world.TryGetBuildingType(coord.ToVector3Int(), out BuildingType building);
 
         bool isOwned = ownership.IsOwned(coord.ToVector3Int());
+        string resolvedOwnerLabel = isOwned ? "YOU" : "NEUTRAL";
+        if (orchestrator != null && orchestrator.TryGetOwnerLabelAt(coord, out string ownerLabel))
+        {
+            resolvedOwnerLabel = ownerLabel;
+        }
+
         int capture = orchestrator != null ? orchestrator.GetCapturePressure(coord) : 0;
 
         if (terrainText != null)
@@ -77,7 +83,7 @@ public class TileScannerPresenter : MonoBehaviour
 
         if (ownerText != null)
         {
-            ownerText.text = $"OWNER: {(isOwned ? "YOU" : "NEUTRAL")}";
+            ownerText.text = $"OWNER: {resolvedOwnerLabel}";
         }
 
         if (buildingText != null)
@@ -160,7 +166,10 @@ public class TileScannerPresenter : MonoBehaviour
 
         if (ownerText != null)
         {
-            ownerText.text = $"OWNER: {(orchestrator != null && orchestrator.IsLocalWallet(unit.ownerWallet) ? "YOU" : "HOSTILE")}";
+            string ownerLabel = orchestrator != null
+                ? orchestrator.DescribeOwnerLabel(unit.ownerWallet)
+                : "HOSTILE";
+            ownerText.text = $"OWNER: {ownerLabel}";
         }
 
         if (influenceText != null)
@@ -202,18 +211,15 @@ public class TileScannerPresenter : MonoBehaviour
     {
         float food = 0f;
         float minerals = 0f;
-        bool hasAdjacencyBonus = false;
 
         if (terrain == TileType.Farmland)
         {
-            food = orchestrator != null ? orchestrator.FarmFoodPerCycle : 1;
-            hasAdjacencyBonus = world != null && world.HasAdjacentTerrainType(coord.ToVector3Int(), TileType.Water);
+            food = orchestrator != null ? orchestrator.FarmFoodPerCycle : 0.125f;
         }
 
         if (building == BuildingType.Industry)
         {
-            minerals = orchestrator != null ? orchestrator.GetIndustryYieldPerCycle(coord) : 1f;
-            hasAdjacencyBonus = hasAdjacencyBonus || (world != null && world.HasAdjacentTerrainType(coord.ToVector3Int(), TileType.Mountain));
+            minerals = orchestrator != null ? orchestrator.GetIndustryYieldPerCycle(coord) : 0.05f;
         }
 
         if (food <= 0.001f && minerals <= 0.001f)
@@ -230,11 +236,6 @@ public class TileScannerPresenter : MonoBehaviour
         if (minerals > 0)
         {
             parts = string.IsNullOrEmpty(parts) ? $"MINERALS +{FormatYieldValue(minerals)}" : $"{parts}, MINERALS +{FormatYieldValue(minerals)}";
-        }
-
-        if (hasAdjacencyBonus && orchestrator != null)
-        {
-            parts = $"{parts} (+{Mathf.RoundToInt(orchestrator.AdjacencyYieldBonus * 100f)}% ADJ)";
         }
 
         return parts;

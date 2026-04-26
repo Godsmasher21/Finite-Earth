@@ -38,7 +38,7 @@ public class HexWorldGeneratorTilemap : MonoBehaviour
     [SerializeField] private string fixedMapLayout = "";
 
     [Header("Procedural World")]
-    [SerializeField] private bool useProceduralDefaultWorld = true;
+    [SerializeField] private bool useProceduralDefaultWorld = false;
     [SerializeField, Min(24)] private int proceduralWidth = 176;
     [SerializeField, Min(16)] private int proceduralHeight = 116;
     [SerializeField] private int proceduralSeed = 14001;
@@ -66,6 +66,7 @@ public class HexWorldGeneratorTilemap : MonoBehaviour
     public Tilemap BuildingTilemap => buildingTilemap;
     public Grid RuntimeGrid => runtimeGrid;
     public TileBase FallbackTile => baseTile != null ? baseTile : (typeColors != null ? typeColors.defaultTile : null);
+    public bool UsesProceduralDefaultWorld => useProceduralDefaultWorld;
     public string WorldId => useProceduralDefaultWorld
         ? "finite-earth-procedural-large"
         : (GetUniversalWorldFileData()?.worldId ?? "finite-earth-local");
@@ -97,7 +98,10 @@ public class HexWorldGeneratorTilemap : MonoBehaviour
 
     private void Start()
     {
-        Generate();
+        if (!IsGenerated)
+        {
+            Generate();
+        }
     }
 
     [ContextMenu("Generate")]
@@ -201,6 +205,45 @@ public class HexWorldGeneratorTilemap : MonoBehaviour
         PaintTerrainCell(cell, newType);
         tilemap.RefreshTile(cell);
         return true;
+    }
+
+    public void LoadSnapshotWorld(TileType[,] terrainMap, BuildingType[,] buildingState = null)
+    {
+        if (terrainMap == null)
+        {
+            Debug.LogError("HexWorldGeneratorTilemap: cannot load a null snapshot world.");
+            return;
+        }
+
+        int width = terrainMap.GetLength(0);
+        int height = terrainMap.GetLength(1);
+        if (width <= 0 || height <= 0)
+        {
+            Debug.LogError("HexWorldGeneratorTilemap: snapshot world dimensions must be positive.");
+            return;
+        }
+
+        EnsureRuntimeGridAndLayers();
+
+        useProceduralDefaultWorld = false;
+        typeMap = terrainMap;
+        buildingMap = new BuildingType[width, height];
+        miningCountMap = new int[width, height];
+        generatedSpawnPoints = Array.Empty<Vector3Int>();
+
+        if (buildingState != null
+            && buildingState.GetLength(0) == width
+            && buildingState.GetLength(1) == height)
+        {
+            Array.Copy(buildingState, buildingMap, buildingState.Length);
+        }
+
+        tilemap.ClearAllTiles();
+        buildingTilemap.ClearAllTiles();
+
+        RepaintAllTerrain();
+        RepaintAllBuildings();
+        isGenerated = true;
     }
 
     public int GetMiningCount(Vector3Int cell)
@@ -483,6 +526,38 @@ public class HexWorldGeneratorTilemap : MonoBehaviour
         }
 
         return false;
+    }
+
+    public bool IsOnSettlementRadiusRing(Vector3Int cell, int radius = -1)
+    {
+        if (buildingMap == null || !InBounds(cell))
+        {
+            return false;
+        }
+
+        int effectiveRadius = radius > 0 ? radius : settlementRadius;
+        bool ringMatch = false;
+
+        foreach (Vector3Int candidate in EnumerateCells())
+        {
+            if (buildingMap[candidate.x, candidate.y] != BuildingType.Settlement)
+            {
+                continue;
+            }
+
+            int distance = HexDistance(candidate, cell);
+            if (distance < effectiveRadius)
+            {
+                return false;
+            }
+
+            if (distance == effectiveRadius)
+            {
+                ringMatch = true;
+            }
+        }
+
+        return ringMatch;
     }
 
     public int CountTilesOfType(TileType type)
@@ -789,7 +864,6 @@ public class HexWorldGeneratorTilemap : MonoBehaviour
             Mathf.Max(0.01f, runtimeGridCellSize.x),
             Mathf.Max(0.01f, runtimeGridCellSize.y),
             runtimeGridCellSize.z);
-        runtimeGrid.cellGap = runtimeGridCellGap;
 
         if (tilemap == null)
         {

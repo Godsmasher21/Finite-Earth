@@ -179,15 +179,15 @@ public class ActionInputController : MonoBehaviour
             return;
         }
 
-        if (keyboard.digit1Key.wasPressedThisFrame) ActionHotkeyPressed?.Invoke(FiniteEarthActionType.Claim);
-        if (keyboard.digit2Key.wasPressedThisFrame) ActionHotkeyPressed?.Invoke(FiniteEarthActionType.BuildSettlement);
+        if (keyboard.digit1Key.wasPressedThisFrame) ActionHotkeyPressed?.Invoke(FiniteEarthActionType.BuildSettlement);
+        if (keyboard.digit2Key.wasPressedThisFrame) ActionHotkeyPressed?.Invoke(FiniteEarthActionType.BuildBarracks);
         if (keyboard.digit3Key.wasPressedThisFrame) ActionHotkeyPressed?.Invoke(FiniteEarthActionType.BuildIndustry);
-        if (keyboard.digit4Key.wasPressedThisFrame) ActionHotkeyPressed?.Invoke(FiniteEarthActionType.HarvestForest);
-        if (keyboard.digit5Key.wasPressedThisFrame) ActionHotkeyPressed?.Invoke(FiniteEarthActionType.Reforest);
-        if (keyboard.digit6Key.wasPressedThisFrame) ActionHotkeyPressed?.Invoke(FiniteEarthActionType.Farm);
-        if (keyboard.digit7Key.wasPressedThisFrame) ActionHotkeyPressed?.Invoke(FiniteEarthActionType.Irrigate);
-        if (keyboard.digit8Key.wasPressedThisFrame) ActionHotkeyPressed?.Invoke(FiniteEarthActionType.Mine);
-        if (keyboard.digit9Key.wasPressedThisFrame) ActionHotkeyPressed?.Invoke(FiniteEarthActionType.Restore);
+        if (keyboard.digit4Key.wasPressedThisFrame) ActionHotkeyPressed?.Invoke(FiniteEarthActionType.RemoveBuilding);
+        if (keyboard.digit5Key.wasPressedThisFrame) ActionHotkeyPressed?.Invoke(FiniteEarthActionType.HarvestForest);
+        if (keyboard.digit6Key.wasPressedThisFrame) ActionHotkeyPressed?.Invoke(FiniteEarthActionType.Reforest);
+        if (keyboard.digit7Key.wasPressedThisFrame) ActionHotkeyPressed?.Invoke(FiniteEarthActionType.Farm);
+        if (keyboard.digit8Key.wasPressedThisFrame) ActionHotkeyPressed?.Invoke(FiniteEarthActionType.Irrigate);
+        if (keyboard.digit9Key.wasPressedThisFrame) ActionHotkeyPressed?.Invoke(FiniteEarthActionType.Mine);
         if (keyboard.digit0Key.wasPressedThisFrame) ActionHotkeyPressed?.Invoke(FiniteEarthActionType.SpawnArmy);
     }
 

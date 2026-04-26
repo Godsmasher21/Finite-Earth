@@ -31,6 +31,7 @@ public class OwnershipOverlayPointTop : MonoBehaviour
     [SerializeField] private bool multiplyOwnedTileByTint = false;
     [SerializeField] private bool enforceHighContrastOwnedOverlay = true;
     [SerializeField] private Color highContrastOwnedTint = new Color(0.08f, 0.72f, 1.00f, 0.44f);
+    [SerializeField] private Color settlementExpansionRingTint = new Color(0.34f, 0.92f, 1.00f, 0.62f);
     [SerializeField] private bool preferDedicatedOwnedTileVisual = false;
     [SerializeField] private bool enforceReadableOverlayTheme = true;
 
@@ -43,8 +44,29 @@ public class OwnershipOverlayPointTop : MonoBehaviour
     [SerializeField] private int starterOwnedRadius = 0;
     [SerializeField] private bool placeStarterSettlement = true;
 
+    [Header("Settlement Influence")]
+    [SerializeField] private bool autoClaimSettlementRadius = true;
+
     private bool[,] owned;
     private readonly List<Vector3Int> selectedCells = new List<Vector3Int>();
+
+    // Rival player ownership: cell key → wallet address
+    private readonly Dictionary<long, string> rivalOwnerByCell = new Dictionary<long, string>();
+    // Wallet address → assigned display color
+    private readonly Dictionary<string, Color> rivalColorByWallet = new Dictionary<string, Color>();
+    private int nextRivalColorIndex;
+
+    private static readonly Color[] RivalPalette =
+    {
+        new Color(0.95f, 0.22f, 0.22f, 0.50f),  // Red
+        new Color(0.95f, 0.55f, 0.10f, 0.50f),  // Orange
+        new Color(0.72f, 0.20f, 0.95f, 0.50f),  // Purple
+        new Color(0.95f, 0.28f, 0.72f, 0.50f),  // Pink
+        new Color(0.22f, 0.88f, 0.32f, 0.50f),  // Green
+        new Color(0.95f, 0.88f, 0.12f, 0.50f),  // Yellow
+        new Color(0.20f, 0.88f, 0.82f, 0.50f),  // Cyan
+        new Color(0.55f, 0.50f, 0.95f, 0.50f),  // Lavender
+    };
 
     public bool HasSelection => selectedCells.Count > 0;
     public Vector3Int SelectedCell => selectedCells.Count > 0 ? selectedCells[0] : default;
@@ -189,6 +211,7 @@ public class OwnershipOverlayPointTop : MonoBehaviour
 
     public int GetOwnedCount()
     {
+        EnsureOwnedArray();
         int count = 0;
 
         for (int y = 0; y < height; y++)
@@ -207,6 +230,7 @@ public class OwnershipOverlayPointTop : MonoBehaviour
 
     public bool TryGetAnyOwnedCell(out Vector3Int cell)
     {
+        EnsureOwnedArray();
         for (int y = 0; y < height; y++)
         {
             for (int x = 0; x < width; x++)
@@ -227,6 +251,7 @@ public class OwnershipOverlayPointTop : MonoBehaviour
 
     public bool IsAdjacentToOwned(Vector3Int cell)
     {
+        EnsureOwnedArray();
         Vector3Int[] neighbors = HexWorldGeneratorTilemap.GetNeighborsPointTop(cell);
 
         for (int i = 0; i < neighbors.Length; i++)
@@ -289,7 +314,58 @@ public class OwnershipOverlayPointTop : MonoBehaviour
     public void ResetOwnership()
     {
         ClearOwned();
+        rivalOwnerByCell.Clear();
         RefreshOverlay();
+    }
+
+    public void SetAutomaticSettlementClaimsEnabled(bool enabled)
+    {
+        if (autoClaimSettlementRadius == enabled)
+        {
+            return;
+        }
+
+        autoClaimSettlementRadius = enabled;
+        RefreshOverlay();
+    }
+
+    public void SetRivalOwned(Vector3Int cell, string walletAddress)
+    {
+        if (!InBounds(cell))
+        {
+            return;
+        }
+
+        long key = CellKey(cell);
+
+        if (string.IsNullOrWhiteSpace(walletAddress))
+        {
+            rivalOwnerByCell.Remove(key);
+            return;
+        }
+
+        rivalOwnerByCell[key] = walletAddress;
+
+        if (!rivalColorByWallet.ContainsKey(walletAddress))
+        {
+            rivalColorByWallet[walletAddress] = RivalPalette[nextRivalColorIndex % RivalPalette.Length];
+            nextRivalColorIndex++;
+        }
+    }
+
+    public void ClearRivalOwnership()
+    {
+        rivalOwnerByCell.Clear();
+    }
+
+    public bool TryGetRivalColor(string walletAddress, out Color color)
+    {
+        return rivalColorByWallet.TryGetValue(walletAddress, out color);
+    }
+
+    private static long CellKey(Vector3Int cell)
+    {
+        return (((long)cell.x) << 32) ^ (uint)cell.y;
     }
 
     [ContextMenu("Refresh Overlay")]
@@ -298,6 +374,7 @@ public class OwnershipOverlayPointTop : MonoBehaviour
         EnsureOverlayLayers();
         SyncBoundsFromGenerator();
         EnsureOwnedArray();
+        ApplyAutomaticSettlementClaims();
 
         if (overlayTilemap == null)
         {
@@ -305,8 +382,28 @@ public class OwnershipOverlayPointTop : MonoBehaviour
         }
 
         overlayTilemap.ClearAllTiles();
-        Color overlayColor = GetOwnedOverlayColor();
 
+        // Draw rival tiles first so local ownership renders on top.
+        foreach (var kvp in rivalOwnerByCell)
+        {
+            int x = (int)(kvp.Key >> 32);
+            int y = (int)(uint)kvp.Key;
+            Vector3Int cell = new Vector3Int(x, y, 0);
+            if (!InBounds(cell))
+            {
+                continue;
+            }
+
+            Color rivalColor = rivalColorByWallet.TryGetValue(kvp.Value, out Color c)
+                ? c
+                : new Color(0.8f, 0.3f, 0.3f, 0.45f);
+
+            overlayTilemap.SetTile(cell, ResolveOwnedOverlayTile(cell));
+            overlayTilemap.SetTileFlags(cell, TileFlags.None);
+            overlayTilemap.SetColor(cell, rivalColor);
+        }
+
+        // Draw local player tiles on top.
         for (int y = 0; y < height; y++)
         {
             for (int x = 0; x < width; x++)
@@ -319,11 +416,85 @@ public class OwnershipOverlayPointTop : MonoBehaviour
                 Vector3Int cell = new Vector3Int(x, y, 0);
                 overlayTilemap.SetTile(cell, ResolveOwnedOverlayTile(cell));
                 overlayTilemap.SetTileFlags(cell, TileFlags.None);
-                overlayTilemap.SetColor(cell, overlayColor);
+                overlayTilemap.SetColor(cell, GetOwnedOverlayColor(cell));
             }
         }
 
         overlayTilemap.RefreshAllTiles();
+    }
+
+    private void ApplyAutomaticSettlementClaims()
+    {
+        if (!autoClaimSettlementRadius || worldGenerator == null || !worldGenerator.IsGenerated)
+        {
+            return;
+        }
+
+        int radius = Mathf.Max(0, worldGenerator.SettlementRadius);
+        if (radius <= 0)
+        {
+            return;
+        }
+
+        var pendingClaims = new HashSet<long>();
+        for (int y = 0; y < height; y++)
+        {
+            for (int x = 0; x < width; x++)
+            {
+                if (!owned[x, y])
+                {
+                    continue;
+                }
+
+                Vector3Int origin = new Vector3Int(x, y, 0);
+                if (!worldGenerator.TryGetBuildingType(origin, out BuildingType building) || building != BuildingType.Settlement)
+                {
+                    continue;
+                }
+
+                int minX = Mathf.Max(0, x - radius);
+                int maxX = Mathf.Min(width - 1, x + radius);
+                int minY = Mathf.Max(0, y - radius);
+                int maxY = Mathf.Min(height - 1, y + radius);
+
+                for (int cy = minY; cy <= maxY; cy++)
+                {
+                    for (int cx = minX; cx <= maxX; cx++)
+                    {
+                        if (owned[cx, cy])
+                        {
+                            continue;
+                        }
+
+                        Vector3Int candidate = new Vector3Int(cx, cy, 0);
+                        if (HexWorldGeneratorTilemap.HexDistance(origin, candidate) > radius)
+                        {
+                            continue;
+                        }
+
+                        long key = CellKey(candidate);
+                        if (rivalOwnerByCell.ContainsKey(key))
+                        {
+                            continue;
+                        }
+
+                        if (!worldGenerator.TryGetTileType(candidate, out TileType terrainType) || !terrainType.IsClaimable())
+                        {
+                            continue;
+                        }
+
+                        pendingClaims.Add(key);
+                    }
+                }
+            }
+        }
+
+        foreach (long key in pendingClaims)
+        {
+            int x = (int)(key >> 32);
+            int y = (int)(uint)key;
+            owned[x, y] = true;
+        }
     }
 
     private void RefreshSelection()
@@ -510,8 +681,15 @@ public class OwnershipOverlayPointTop : MonoBehaviour
         return selectionTile != null ? selectionTile : ResolveOwnedOverlayTile(cell);
     }
 
-    private Color GetOwnedOverlayColor()
+    private Color GetOwnedOverlayColor(Vector3Int cell)
     {
+        if (IsSettlementExpansionRingCell(cell))
+        {
+            Color ringTint = settlementExpansionRingTint;
+            ringTint.a = Mathf.Clamp01(ringTint.a);
+            return ringTint;
+        }
+
         if (enforceHighContrastOwnedOverlay)
         {
             return highContrastOwnedTint;
@@ -532,6 +710,26 @@ public class OwnershipOverlayPointTop : MonoBehaviour
         Color tint = ownedTint;
         tint.a = Mathf.Clamp01(tint.a);
         return tint;
+    }
+
+    private bool IsSettlementExpansionRingCell(Vector3Int cell)
+    {
+        if (worldGenerator == null || !owned[cell.x, cell.y] || !worldGenerator.HasAnySettlement())
+        {
+            return false;
+        }
+
+        if (!worldGenerator.TryGetTileType(cell, out TileType terrain) || terrain != TileType.Plains)
+        {
+            return false;
+        }
+
+        if (!worldGenerator.TryGetBuildingType(cell, out BuildingType building) || building != BuildingType.None)
+        {
+            return false;
+        }
+
+        return worldGenerator.IsOnSettlementRadiusRing(cell, worldGenerator.SettlementRadius);
     }
 
     private Color GetAnimatedSelectionColor(float pulse)
@@ -601,6 +799,7 @@ public class OwnershipOverlayPointTop : MonoBehaviour
         enforceHighContrastOwnedOverlay = true;
         ownedTint = new Color(0.04f, 0.62f, 0.96f, 0.26f);
         highContrastOwnedTint = new Color(0.08f, 0.72f, 1.00f, 0.44f);
+        settlementExpansionRingTint = new Color(0.34f, 0.92f, 1.00f, 0.62f);
         selectedTint = new Color(1.00f, 0.82f, 0.18f, 1.00f);
     }
 

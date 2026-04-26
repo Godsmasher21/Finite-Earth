@@ -212,6 +212,12 @@ public class WorldCameraController : MonoBehaviour
         return worldBounds.size.x > 0.1f && worldBounds.size.y > 0.1f;
     }
 
+    public void ReframeToWorld()
+    {
+        hasInitialFrame = false;
+        ApplyInitialFrameAndZoomLimits();
+    }
+
     public void FocusOnCell(Vector3Int cell, bool zoomIn)
     {
         if (targetCamera == null || worldGenerator == null || !worldGenerator.IsGenerated)

@@ -1,8 +1,14 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.EventSystems;
+using UnityEngine.Networking;
+#if ENABLE_INPUT_SYSTEM
+using UnityEngine.InputSystem.UI;
+#endif
 #if UNITY_EDITOR
 using UnityEditor;
 using UnityEditor.SceneManagement;
@@ -17,8 +23,21 @@ public class CommandTableHudPresenter : MonoBehaviour
     private const string MmfPlayerTypeName = "MoreMountains.Feedbacks.MMF_Player";
     private const float TopBarHeight = 92f;
     private const float RightColumnWidth = 256f;
+    private const float LeaderboardRefreshIntervalSeconds = 8f;
+    private const int LeaderboardFetchLimit = 200;
     private static readonly Color NegativeDeltaColor = new Color(0.96f, 0.43f, 0.43f, 1f);
     private static readonly Color PositiveDeltaColor = new Color(0.40f, 0.92f, 0.66f, 1f);
+    private static CommandTableHudPresenter activeInstance;
+
+    private struct LeaderboardStanding
+    {
+        public string wallet;
+        public string username;
+        public string displayName;
+        public int score;
+        public int ownedTiles;
+        public int actionsTaken;
+    }
 
     [Header("Layout")]
     [SerializeField] private Vector2 referenceResolution = new Vector2(1920f, 1080f);
@@ -46,10 +65,52 @@ public class CommandTableHudPresenter : MonoBehaviour
     [SerializeField] private GameObject actionPingPrefab;
     [SerializeField] private GameObject climatePingPrefab;
 
-    private Canvas hudCanvas;
-    private RectTransform hudRoot;
-    private RectTransform topBarRoot;
-    private RectTransform topBarRightCluster;
+    [Header("Scene References — assign via 'Build HUD in Scene' context menu")]
+    [SerializeField] private Canvas hudCanvas;
+    [SerializeField] private RectTransform hudRoot;
+    [SerializeField] private RectTransform topBarRoot;
+    [SerializeField] private RectTransform topBarRightCluster;
+
+    [Header("Top Bar")]
+    [SerializeField] private TMP_Text planetHealthLabel;
+    [SerializeField] private TMP_Text planetHealthMetaText;
+    [SerializeField] private Image planetHealthFill;
+    [SerializeField] private Image planetHealthIconImage;
+    [SerializeField] private TMP_Text forestText;
+    [SerializeField] private TMP_Text carbonText;
+    [SerializeField] private TMP_Text woodText;
+    [SerializeField] private TMP_Text woodMetaText;
+    [SerializeField] private TMP_Text mineralsText;
+    [SerializeField] private TMP_Text mineralsMetaText;
+    [SerializeField] private TMP_Text foodText;
+    [SerializeField] private TMP_Text foodMetaText;
+    [SerializeField] private TMP_Text playerText;
+    [SerializeField] private TMP_Text tickText;
+    [SerializeField] private TMP_Text fieldLogClimateText;
+    [SerializeField] private List<Image> climateStatusIcons = new List<Image>();
+
+    [Header("Sub-Presenters")]
+    [SerializeField] private NetworkStatusPresenter networkStatus;
+    [SerializeField] private TileScannerPresenter tileScanner;
+    [SerializeField] private NotificationFeedPresenter notificationFeed;
+    [SerializeField] private TooltipPresenter tooltip;
+    [SerializeField] private OverlayTogglePresenter overlayToggle;
+    [SerializeField] private HexOverlayPainter overlayPainter;
+    [SerializeField] private ActionWheelPresenter actionWheel;
+    [SerializeField] private ResourcePopupPresenter resourcePopups;
+    [SerializeField] private LeaderboardPresenter leaderboard;
+    [SerializeField] private RectTransform eventFeedPanel;
+    [SerializeField] private RectTransform miniMapPanel;
+    [SerializeField] private RectTransform leaderboardPanel;
+
+    [Header("Climate Modal")]
+    [SerializeField] private CanvasGroup climateModalGroup;
+    [SerializeField] private RectTransform climateModalRoot;
+    [SerializeField] private Image climateModalIcon;
+    [SerializeField] private TMP_Text climateModalTitle;
+    [SerializeField] private TMP_Text climateModalBody;
+    [SerializeField] private Button climateModalOkButton;
+
     private TMP_FontAsset fontAsset;
     private Sprite solidSprite;
     private Sprite hexSprite;
@@ -58,47 +119,21 @@ public class CommandTableHudPresenter : MonoBehaviour
     private GameStateViewModel viewModel;
     private HexWorldGeneratorTilemap worldGenerator;
     private OwnershipOverlayPointTop ownership;
+    private WalletSessionController walletSession;
 
-    private TMP_Text planetHealthLabel;
-    private TMP_Text planetHealthMetaText;
-    private Image planetHealthFill;
-    private Image planetHealthIconImage;
-    private TMP_Text forestText;
-    private TMP_Text carbonText;
-    private TMP_Text woodText;
-    private TMP_Text woodMetaText;
-    private TMP_Text mineralsText;
-    private TMP_Text mineralsMetaText;
-    private TMP_Text foodText;
-    private TMP_Text foodMetaText;
-    private TMP_Text playerText;
-    private TMP_Text tickText;
-    private TMP_Text fieldLogClimateText;
-    private readonly List<Image> climateStatusIcons = new List<Image>();
     private float nextRateSnapshotAt;
     private ResourceRateSnapshot cachedRateSnapshot;
-
-    private CanvasGroup climateModalGroup;
-    private RectTransform climateModalRoot;
-    private Image climateModalIcon;
-    private TMP_Text climateModalTitle;
-    private TMP_Text climateModalBody;
-    private Button climateModalOkButton;
     private readonly Queue<ClimateEventType> pendingClimateModalQueue = new Queue<ClimateEventType>();
+    private readonly List<LeaderboardStanding> leaderboardStandings = new List<LeaderboardStanding>(LeaderboardFetchLimit);
+    private readonly List<LeaderboardLineData> leaderboardLines = new List<LeaderboardLineData>(7);
     private bool climateModalVisible;
-
-    private TileScannerPresenter tileScanner;
-    private ActionConsolePresenter actionConsole;
-    private NotificationFeedPresenter notificationFeed;
-    private TooltipPresenter tooltip;
-    private OverlayTogglePresenter overlayToggle;
-    private HexOverlayPainter overlayPainter;
-    private ActionWheelPresenter actionWheel;
-    private ResourcePopupPresenter resourcePopups;
-    private RectTransform eventFeedPanel;
-    private RectTransform miniMapPanel;
     private bool eventsBound;
     private bool hasLoggedFontResolutionError;
+    private bool leaderboardRequestInFlight;
+    private bool leaderboardDirty = true;
+    private float nextLeaderboardRefreshAt;
+    private int lastLeaderboardOwnedTiles = int.MinValue;
+    private LeaderboardResponseMessage cachedLeaderboardResponse;
 
     private void Reset()
     {
@@ -122,23 +157,24 @@ public class CommandTableHudPresenter : MonoBehaviour
         EnsureFeedbackHooks(true);
     }
 
-    private readonly FiniteEarthActionType[] consoleOrder =
-    {
-        FiniteEarthActionType.Claim,
-        FiniteEarthActionType.BuildSettlement,
-        FiniteEarthActionType.BuildBarracks,
-        FiniteEarthActionType.BuildIndustry,
-        FiniteEarthActionType.HarvestForest,
-        FiniteEarthActionType.Reforest,
-        FiniteEarthActionType.Farm,
-        FiniteEarthActionType.Irrigate,
-        FiniteEarthActionType.Mine,
-        FiniteEarthActionType.Restore,
-        FiniteEarthActionType.SpawnArmy
-    };
-
     private void Awake()
     {
+        if (activeInstance != null && activeInstance != this)
+        {
+            bool preferThis = string.Equals(gameObject.name, "CommandTableHUD", StringComparison.Ordinal)
+                && !string.Equals(activeInstance.gameObject.name, "CommandTableHUD", StringComparison.Ordinal);
+
+            if (!preferThis)
+            {
+                enabled = false;
+                return;
+            }
+
+            activeInstance.DisableDuplicateInstance();
+        }
+
+        activeInstance = this;
+        EnsureEventSystem();
         ApplyThemePreset();
         EnsureFeedbackHooks(true);
         ResolveReferences();
@@ -149,11 +185,35 @@ public class CommandTableHudPresenter : MonoBehaviour
 
     private void OnDestroy()
     {
+        if (activeInstance == this)
+        {
+            activeInstance = null;
+        }
+
         if (orchestrator != null)
         {
             orchestrator.ActionExecuted -= HandleActionExecuted;
             orchestrator.ResourcePopupRequested -= HandleResourcePopupRequested;
             orchestrator.ClimateEventTriggered -= HandleClimateEvent;
+        }
+    }
+
+    private void DisableDuplicateInstance()
+    {
+        enabled = false;
+
+        if (hudRoot != null)
+        {
+            if (Application.isPlaying)
+            {
+                Destroy(hudRoot.gameObject);
+            }
+            else
+            {
+                DestroyImmediate(hudRoot.gameObject);
+            }
+
+            hudRoot = null;
         }
     }
 
@@ -174,9 +234,9 @@ public class CommandTableHudPresenter : MonoBehaviour
 
         RefreshTopBar();
         RefreshTileScanner();
-        RefreshActionConsole();
         RefreshActionWheel();
         RefreshRightColumnPanels();
+        RefreshLeaderboard();
     }
 
     private void ResolveReferences()
@@ -201,6 +261,11 @@ public class CommandTableHudPresenter : MonoBehaviour
             ownership = FindAnyObjectByType<OwnershipOverlayPointTop>();
         }
 
+        if (walletSession == null)
+        {
+            walletSession = FindAnyObjectByType<WalletSessionController>();
+        }
+
         if (overlayPainter != null && !overlayPainter.IsInitialized && worldGenerator != null && ownership != null && orchestrator != null)
         {
             overlayPainter.Initialize(worldGenerator, ownership, orchestrator);
@@ -223,13 +288,24 @@ public class CommandTableHudPresenter : MonoBehaviour
         eventsBound = true;
     }
 
+    [ContextMenu("Build HUD in Scene")]
+    private void BakeHudToScene()
+    {
+        hudRoot = null;
+        if (hudCanvas != null)
+        {
+            Transform existing = hudCanvas.transform.Find("CommandTableHUDRoot");
+            if (existing != null)
+            {
+                DestroyImmediate(existing.gameObject);
+            }
+        }
+        BuildHud();
+        MarkSceneDirtyIfNeeded();
+    }
+
     private void BuildHud()
     {
-        if (hudRoot != null)
-        {
-            return;
-        }
-
         EnsureCanvas();
         fontAsset = EnsureFontAsset();
         if (fontAsset == null)
@@ -245,6 +321,14 @@ public class CommandTableHudPresenter : MonoBehaviour
         solidSprite = EnsureSolidSprite();
         hexSprite = BuildHexSprite(64);
 
+        if (hudRoot != null)
+        {
+            InitializeExistingHud();
+            return;
+        }
+
+        ClearExistingHudRoots();
+
         hudRoot = new GameObject("CommandTableHUDRoot", typeof(RectTransform)).GetComponent<RectTransform>();
         hudRoot.SetParent(hudCanvas.transform, false);
         hudRoot.anchorMin = Vector2.zero;
@@ -256,14 +340,59 @@ public class CommandTableHudPresenter : MonoBehaviour
         BuildTopBar();
         BuildTooltip();
         BuildTileScanner();
-        BuildActionConsole();
         BuildEventFeedAndMinimap();
+        BuildLeaderboardPanel();
         BuildActionWheel();
         BuildResourcePopups();
         BuildClimateModal();
         EnsureHoverController();
 
         PlayFeedback(panelRevealFeedback);
+    }
+
+    private void InitializeExistingHud()
+    {
+        if (hudRoot == null)
+        {
+            return;
+        }
+
+        BuildTooltip();
+        BuildLeaderboardPanel();
+        BuildActionWheel();
+        BuildResourcePopups();
+        hudRoot.SetAsLastSibling();
+    }
+
+    private void ClearExistingHudRoots()
+    {
+        if (hudCanvas == null)
+        {
+            return;
+        }
+
+        List<GameObject> existingRoots = new List<GameObject>();
+        Transform canvasTransform = hudCanvas.transform;
+        for (int i = 0; i < canvasTransform.childCount; i++)
+        {
+            Transform child = canvasTransform.GetChild(i);
+            if (child != null && string.Equals(child.name, "CommandTableHUDRoot", StringComparison.Ordinal))
+            {
+                existingRoots.Add(child.gameObject);
+            }
+        }
+
+        for (int i = 0; i < existingRoots.Count; i++)
+        {
+            if (Application.isPlaying)
+            {
+                Destroy(existingRoots[i]);
+            }
+            else
+            {
+                DestroyImmediate(existingRoots[i]);
+            }
+        }
     }
 
     private void EnsureCanvas()
@@ -317,6 +446,34 @@ public class CommandTableHudPresenter : MonoBehaviour
         {
             canvasObject.AddComponent<GraphicRaycaster>();
         }
+    }
+
+    private static void EnsureEventSystem()
+    {
+        EventSystem current = EventSystem.current;
+        if (current != null)
+        {
+#if ENABLE_INPUT_SYSTEM
+            if (current.GetComponent<InputSystemUIInputModule>() == null)
+            {
+                current.gameObject.AddComponent<InputSystemUIInputModule>();
+            }
+#else
+            if (current.GetComponent<StandaloneInputModule>() == null)
+            {
+                current.gameObject.AddComponent<StandaloneInputModule>();
+            }
+#endif
+            return;
+        }
+
+        GameObject eventSystem = new GameObject("EventSystem");
+        eventSystem.AddComponent<EventSystem>();
+#if ENABLE_INPUT_SYSTEM
+        eventSystem.AddComponent<InputSystemUIInputModule>();
+#else
+        eventSystem.AddComponent<StandaloneInputModule>();
+#endif
     }
 
     private void RefreshResponsiveCanvasScale()
@@ -546,11 +703,11 @@ public class CommandTableHudPresenter : MonoBehaviour
 
         topBarRightCluster = new GameObject("TopBarRightCluster", typeof(RectTransform)).GetComponent<RectTransform>();
         topBarRightCluster.SetParent(topBar, false);
-        SetAnchor(topBarRightCluster, new Vector2(1f, 0.5f), new Vector2(1f, 0.5f), new Vector2(1f, 0.5f), new Vector2(320f, 64f), new Vector2(-12f, 0f));
+        SetAnchor(topBarRightCluster, new Vector2(1f, 0.5f), new Vector2(1f, 0.5f), new Vector2(1f, 0.5f), new Vector2(388f, 68f), new Vector2(-12f, 0f));
 
         RectTransform climateRoot = new GameObject("ClimateStatus", typeof(RectTransform)).GetComponent<RectTransform>();
         climateRoot.SetParent(topBarRightCluster, false);
-        SetAnchor(climateRoot, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(116f, 30f), new Vector2(4f, -12f));
+        SetAnchor(climateRoot, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(100f, 30f), new Vector2(4f, -12f));
 
         HorizontalLayoutGroup climateLayout = climateRoot.gameObject.AddComponent<HorizontalLayoutGroup>();
         climateLayout.spacing = 4f;
@@ -572,10 +729,56 @@ public class CommandTableHudPresenter : MonoBehaviour
         }
 
         playerText = CreateText(topBarRightCluster, "PlayerText", "YOU", 22, TextAlignmentOptions.Right, textColor);
-        SetAnchor(playerText.rectTransform, new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(224f, 22f), new Vector2(-4f, -12f));
+        SetAnchor(playerText.rectTransform, new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(260f, 22f), new Vector2(-4f, -12f));
 
-        tickText = CreateText(topBarRightCluster, "TickText", "TICK --", 20, TextAlignmentOptions.Right, mutedTextColor);
-        SetAnchor(tickText.rectTransform, new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(224f, 20f), new Vector2(-4f, -38f));
+        tickText = CreateText(topBarRightCluster, "TickText", "TICK --", 18, TextAlignmentOptions.Left, mutedTextColor);
+        SetAnchor(tickText.rectTransform, new Vector2(0f, 0f), new Vector2(0f, 0f), new Vector2(0f, 0f), new Vector2(196f, 18f), new Vector2(4f, 12f));
+
+        RectTransform statusRoot = new GameObject("NetworkStatus", typeof(RectTransform)).GetComponent<RectTransform>();
+        statusRoot.SetParent(topBarRightCluster, false);
+        SetAnchor(statusRoot, new Vector2(1f, 0f), new Vector2(1f, 0f), new Vector2(1f, 0f), new Vector2(96f, 18f), new Vector2(-4f, 12f));
+
+        TMP_Text statusLabel = CreateText(statusRoot, "StatusLabel", "OFFLINE", 14, TextAlignmentOptions.Right, mutedTextColor);
+        SetAnchor(statusLabel.rectTransform, new Vector2(0f, 0f), new Vector2(1f, 1f), new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero);
+
+        networkStatus = gameObject.AddComponent<NetworkStatusPresenter>();
+        networkStatus.Initialize(statusLabel);
+
+        // ── Web3 HUD row ─────────────────────────────────────────────────────
+        // Wallet address + on-chain token balances, polled from MegaETH.
+        RectTransform web3Row = new GameObject("Web3Row", typeof(RectTransform)).GetComponent<RectTransform>();
+        web3Row.SetParent(topBarRightCluster, false);
+        SetAnchor(web3Row, new Vector2(0f, 0.5f), new Vector2(1f, 0.5f), new Vector2(0.5f, 0.5f),
+            new Vector2(0f, 18f), new Vector2(0f, -8f));
+
+        HorizontalLayoutGroup web3Layout = web3Row.gameObject.AddComponent<HorizontalLayoutGroup>();
+        web3Layout.spacing = 14f;
+        web3Layout.childAlignment = TextAnchor.MiddleRight;
+        web3Layout.childControlWidth = false;
+        web3Layout.childControlHeight = false;
+        web3Layout.childForceExpandWidth = false;
+        web3Layout.childForceExpandHeight = false;
+        web3Layout.reverseArrangement = false;
+        ContentSizeFitter web3Fitter = web3Row.gameObject.AddComponent<ContentSizeFitter>();
+        web3Fitter.horizontalFit = ContentSizeFitter.FitMode.PreferredSize;
+
+        TMP_Text web3WalletLabel = CreateText(web3Row, "WalletLabel", "--", 12, TextAlignmentOptions.Right, mutedTextColor);
+        SetPreferredWidth(web3WalletLabel.rectTransform, 96f);
+        TMP_Text web3TilesLabel = CreateText(web3Row, "TilesLabel",  "TILES --", 12, TextAlignmentOptions.Right, mutedTextColor);
+        SetPreferredWidth(web3TilesLabel.rectTransform, 72f);
+        TMP_Text web3FrtLabel   = CreateText(web3Row, "FrtLabel",   "FRT --",   12, TextAlignmentOptions.Right, mutedTextColor);
+        SetPreferredWidth(web3FrtLabel.rectTransform, 72f);
+        TMP_Text web3CrtLabel   = CreateText(web3Row, "CrtLabel",   "CRT --",   12, TextAlignmentOptions.Right, mutedTextColor);
+        SetPreferredWidth(web3CrtLabel.rectTransform, 72f);
+
+        Web3HudPresenter web3Hud = gameObject.AddComponent<Web3HudPresenter>();
+        web3Hud.InjectLabels(web3WalletLabel, web3FrtLabel, web3CrtLabel, web3TilesLabel);
+    }
+
+    private static void SetPreferredWidth(RectTransform rt, float width)
+    {
+        LayoutElement le = rt.gameObject.AddComponent<LayoutElement>();
+        le.preferredWidth = width;
     }
 
     private void BuildTileScanner()
@@ -616,38 +819,6 @@ public class CommandTableHudPresenter : MonoBehaviour
 
         tileScanner = gameObject.AddComponent<TileScannerPresenter>();
         tileScanner.Initialize(title, terrainText, ownerText, buildingText, influenceText, yieldText, statusText, coordText, terrainIcon, buildingIcon);
-    }
-
-    private void BuildActionConsole()
-    {
-        RectTransform panel = CreatePanel("ActionConsole", hudRoot,
-            new Vector2(1f, 0f), new Vector2(1f, 0f), new Vector2(1f, 0f),
-            new Vector2(400f, 212f), new Vector2(-safeMargin, safeMargin));
-        panel.gameObject.AddComponent<RectMask2D>();
-
-        TMP_Text title = CreateText(panel, "Title", ":: COMMAND CONSOLE", 22, TextAlignmentOptions.Left, textColor);
-        SetAnchor(title.rectTransform, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0f, 1f), new Vector2(0f, 24f), new Vector2(12f, -8f));
-
-        TMP_Text subtitle = CreateText(panel, "Subtitle", "[ SELECT A TILE ]", 18, TextAlignmentOptions.Left, mutedTextColor);
-        SetAnchor(subtitle.rectTransform, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0f, 1f), new Vector2(0f, 20f), new Vector2(12f, -34f));
-
-        RectTransform listRoot = new GameObject("Actions", typeof(RectTransform)).GetComponent<RectTransform>();
-        listRoot.SetParent(panel, false);
-        SetAnchor(listRoot, new Vector2(0f, 0f), new Vector2(1f, 1f), new Vector2(0.5f, 0.5f), new Vector2(-40f, -92f), new Vector2(-4f, -16f));
-        listRoot.gameObject.AddComponent<RectMask2D>();
-
-        VerticalLayoutGroup layout = listRoot.gameObject.AddComponent<VerticalLayoutGroup>();
-        layout.padding = new RectOffset(4, 4, 0, 0);
-        layout.spacing = 6f;
-        layout.childControlHeight = true;
-        layout.childControlWidth = true;
-        layout.childForceExpandHeight = false;
-        layout.childForceExpandWidth = true;
-        layout.childAlignment = TextAnchor.UpperLeft;
-
-        actionConsole = gameObject.AddComponent<ActionConsolePresenter>();
-        actionConsole.Initialize(title, subtitle, listRoot, tooltip);
-        actionConsole.BuildButtons(fontAsset, null, consoleOrder.Length, HandleActionRequested);
     }
 
     private void BuildEventFeedAndMinimap()
@@ -698,36 +869,143 @@ public class CommandTableHudPresenter : MonoBehaviour
         SetAnchor(mapLabel.rectTransform, new Vector2(0f, 0f), new Vector2(1f, 1f), new Vector2(0.5f, 0.5f), new Vector2(-20f, -28f), new Vector2(0f, -4f));
     }
 
+    private void BuildLeaderboardPanel()
+    {
+        RectTransform panel = hudRoot != null ? hudRoot.Find("Leaderboard") as RectTransform : null;
+        if (panel == null)
+        {
+            panel = CreatePanel("Leaderboard", hudRoot,
+                new Vector2(1f, 0f), new Vector2(1f, 0f), new Vector2(1f, 0f),
+                new Vector2(RightColumnWidth, 196f), new Vector2(-safeMargin, safeMargin));
+        }
+        leaderboardPanel = panel;
+
+        leaderboard = gameObject.GetComponent<LeaderboardPresenter>();
+        if (leaderboard == null)
+        {
+            leaderboard = gameObject.AddComponent<LeaderboardPresenter>();
+        }
+
+        leaderboard.Initialize(panel, fontAsset, textColor, mutedTextColor, accentAmber);
+        leaderboardDirty = true;
+    }
+
     private void BuildTooltip()
     {
-        RectTransform tooltipRoot = new GameObject("Tooltip", typeof(RectTransform)).GetComponent<RectTransform>();
-        tooltipRoot.SetParent(hudRoot, false);
-        tooltipRoot.sizeDelta = new Vector2(240f, 48f);
+        RectTransform tooltipRoot = hudRoot != null ? hudRoot.Find("Tooltip") as RectTransform : null;
+        if (tooltipRoot == null)
+        {
+            tooltipRoot = new GameObject("Tooltip", typeof(RectTransform)).GetComponent<RectTransform>();
+            tooltipRoot.SetParent(hudRoot, false);
+            tooltipRoot.sizeDelta = new Vector2(280f, 92f);
 
-        Image bg = tooltipRoot.gameObject.AddComponent<Image>();
-        bg.color = panelColor;
-        bg.sprite = solidSprite;
-        bg.raycastTarget = false;
+            Image bg = tooltipRoot.gameObject.AddComponent<Image>();
+            bg.color = panelColor;
+            bg.sprite = solidSprite;
+            bg.raycastTarget = false;
+        }
 
-        CanvasGroup group = tooltipRoot.gameObject.AddComponent<CanvasGroup>();
+        Image background = tooltipRoot.GetComponent<Image>();
+        if (background == null)
+        {
+            background = tooltipRoot.gameObject.AddComponent<Image>();
+        }
+
+        background.color = panelColor;
+        background.sprite = solidSprite;
+        background.raycastTarget = false;
+
+        Outline tooltipOutline = tooltipRoot.GetComponent<Outline>();
+        if (tooltipOutline == null)
+        {
+            tooltipOutline = tooltipRoot.gameObject.AddComponent<Outline>();
+        }
+
+        tooltipOutline.effectColor = new Color(accentTeal.r, accentTeal.g, accentTeal.b, 0.72f);
+        tooltipOutline.effectDistance = new Vector2(1f, -1f);
+        tooltipOutline.useGraphicAlpha = true;
+
+        Shadow tooltipShadow = tooltipRoot.GetComponent<Shadow>();
+        if (tooltipShadow == null)
+        {
+            tooltipShadow = tooltipRoot.gameObject.AddComponent<Shadow>();
+        }
+
+        tooltipShadow.effectColor = new Color(0f, 0f, 0f, 0.65f);
+        tooltipShadow.effectDistance = new Vector2(2f, -2f);
+        tooltipShadow.useGraphicAlpha = true;
+
+        CanvasGroup group = tooltipRoot.GetComponent<CanvasGroup>();
+        if (group == null)
+        {
+            group = tooltipRoot.gameObject.AddComponent<CanvasGroup>();
+        }
+
         group.alpha = 0f;
 
-        TMP_Text label = CreateText(tooltipRoot, "TooltipText", string.Empty, 16, TextAlignmentOptions.MidlineLeft, textColor);
-        SetAnchor(label.rectTransform, new Vector2(0f, 0f), new Vector2(1f, 1f), new Vector2(0.5f, 0.5f), new Vector2(-12f, -8f), Vector2.zero);
+        RectTransform accentBar = tooltipRoot.Find("Accent") as RectTransform;
+        if (accentBar == null)
+        {
+            accentBar = new GameObject("Accent", typeof(RectTransform)).GetComponent<RectTransform>();
+            accentBar.SetParent(tooltipRoot, false);
+            SetAnchor(accentBar, new Vector2(0f, 0f), new Vector2(0f, 1f), new Vector2(0f, 0.5f), new Vector2(5f, -10f), new Vector2(8f, 0f));
+            Image accentImage = accentBar.gameObject.AddComponent<Image>();
+            accentImage.sprite = solidSprite;
+            accentImage.color = accentTeal;
+            accentImage.raycastTarget = false;
+        }
 
-        tooltip = gameObject.AddComponent<TooltipPresenter>();
-        tooltip.Initialize(tooltipRoot, label, group, hudRoot);
+        TMP_Text title = tooltipRoot.Find("TooltipTitle")?.GetComponent<TMP_Text>();
+        if (title == null)
+        {
+            title = CreateText(tooltipRoot, "TooltipTitle", string.Empty, 18, TextAlignmentOptions.TopLeft, textColor);
+            title.fontStyle = FontStyles.Bold;
+            SetAnchor(title.rectTransform, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0f, 1f), new Vector2(-30f, 22f), new Vector2(20f, -10f));
+        }
+
+        TMP_Text body = tooltipRoot.Find("TooltipBody")?.GetComponent<TMP_Text>();
+        if (body == null)
+        {
+            body = CreateText(tooltipRoot, "TooltipBody", string.Empty, 15, TextAlignmentOptions.TopLeft, textColor);
+            body.textWrappingMode = TextWrappingModes.Normal;
+            body.overflowMode = TextOverflowModes.Overflow;
+            SetAnchor(body.rectTransform, new Vector2(0f, 0f), new Vector2(1f, 1f), new Vector2(0f, 0f), new Vector2(-30f, -34f), new Vector2(20f, 10f));
+        }
+        else
+        {
+            body.textWrappingMode = TextWrappingModes.Normal;
+            body.overflowMode = TextOverflowModes.Overflow;
+        }
+
+        tooltip = tooltip != null ? tooltip : GetComponent<TooltipPresenter>();
+        if (tooltip == null)
+        {
+            tooltip = gameObject.AddComponent<TooltipPresenter>();
+        }
+
+        tooltip.Initialize(tooltipRoot, title, body, group, hudRoot);
     }
 
     private void BuildActionWheel()
     {
-        actionWheel = gameObject.AddComponent<ActionWheelPresenter>();
+        actionWheel = actionWheel != null ? actionWheel : GetComponent<ActionWheelPresenter>();
+        if (actionWheel == null)
+        {
+            actionWheel = gameObject.AddComponent<ActionWheelPresenter>();
+        }
+
+        actionWheel.ResetRuntimeWheel();
         actionWheel.Initialize(hudRoot, fontAsset, hexSprite, tooltip, HandleActionRequested);
     }
 
     private void BuildResourcePopups()
     {
-        resourcePopups = gameObject.AddComponent<ResourcePopupPresenter>();
+        resourcePopups = resourcePopups != null ? resourcePopups : GetComponent<ResourcePopupPresenter>();
+        if (resourcePopups == null)
+        {
+            resourcePopups = gameObject.AddComponent<ResourcePopupPresenter>();
+        }
+
         resourcePopups.Initialize(hudRoot, fontAsset, worldGenerator, Camera.main);
     }
 
@@ -872,12 +1150,12 @@ public class CommandTableHudPresenter : MonoBehaviour
 
         if (playerText != null)
         {
-            playerText.text = $"YOU | {player.reputationLabel.ToUpperInvariant()}";
+            playerText.text = $"YOU · {player.reputationLabel.ToUpperInvariant()}";
         }
 
         if (tickText != null && orchestrator != null)
         {
-            tickText.text = $"TICK {world.tick} | {orchestrator.CycleRemainingSeconds:0}s";
+            tickText.text = $"TICK {world.tick} · NEXT {orchestrator.CycleRemainingSeconds:0}s";
         }
 
         RefreshClimateStatusIcons();
@@ -922,47 +1200,19 @@ public class CommandTableHudPresenter : MonoBehaviour
         tileScanner.Refresh(orchestrator.HasSelection, orchestrator.SelectedCoord, worldGenerator, ownership, orchestrator);
     }
 
-    private void RefreshActionConsole()
-    {
-        if (actionConsole == null || orchestrator == null || worldGenerator == null)
-        {
-            return;
-        }
-
-        string title = "NO SELECTION";
-        if (orchestrator.TryGetSelectedArmy(out ArmyUnit selectedArmy, out float cooldownRemaining))
-        {
-            string status = orchestrator.DescribeSelectedArmyStatus(cooldownRemaining);
-            title = $"ARMY {selectedArmy.strength}/{orchestrator.MaxArmyStrength} | {status}";
-            actionConsole.Refresh(title, true, Array.Empty<ActionAvailability>(), Array.Empty<FiniteEarthActionType>());
-            return;
-        }
-
-        if (orchestrator.HasSelection)
-        {
-            worldGenerator.TryGetTileType(orchestrator.SelectedCoord.ToVector3Int(), out TileType terrain);
-            worldGenerator.TryGetBuildingType(orchestrator.SelectedCoord.ToVector3Int(), out BuildingType building);
-            if (building != BuildingType.None)
-            {
-                title = building.GetDisplayName();
-                if (building == BuildingType.Barracks)
-                {
-                    int capacity = Mathf.Max(1, orchestrator.OwnedBarracksCount);
-                    title = $"{title.ToUpperInvariant()} | CAP {orchestrator.OwnedArmyCount}/{capacity}";
-                }
-            }
-            else
-            {
-                title = terrain.GetDisplayName().ToUpperInvariant();
-            }
-        }
-
-        actionConsole.Refresh(title, orchestrator.HasSelection, orchestrator.LastActionStates, consoleOrder);
-    }
-
     private void RefreshActionWheel()
     {
-        if (actionWheel == null || orchestrator == null || worldGenerator == null || ownership == null)
+        if (orchestrator == null || worldGenerator == null || ownership == null)
+        {
+            return;
+        }
+
+        if (actionWheel == null || !actionWheel.IsInitialized)
+        {
+            BuildActionWheel();
+        }
+
+        if (actionWheel == null)
         {
             return;
         }
@@ -986,6 +1236,293 @@ public class CommandTableHudPresenter : MonoBehaviour
         {
             fieldLogClimateText.text = BuildFieldLogClimateStatus();
         }
+    }
+
+    private void RefreshLeaderboard()
+    {
+        if (leaderboard == null || leaderboardPanel == null)
+        {
+            if (hudRoot != null)
+            {
+                BuildLeaderboardPanel();
+            }
+            else
+            {
+                return;
+            }
+        }
+
+        bool playerStatsChanged = HasLeaderboardPlayerStateChanged();
+        if (playerStatsChanged)
+        {
+            leaderboardDirty = true;
+        }
+
+        TryScheduleLeaderboardRefresh();
+
+        if (!leaderboardDirty)
+        {
+            return;
+        }
+
+        ApplyLeaderboardView();
+    }
+
+    private bool HasLeaderboardPlayerStateChanged()
+    {
+        if (viewModel?.PlayerState == null)
+        {
+            return false;
+        }
+
+        PlayerState player = viewModel.PlayerState;
+        return player.ownedTilesCount != lastLeaderboardOwnedTiles;
+    }
+
+    private void TryScheduleLeaderboardRefresh()
+    {
+        if (!Application.isPlaying || leaderboardRequestInFlight || Time.unscaledTime < nextLeaderboardRefreshAt)
+        {
+            return;
+        }
+
+        if (walletSession == null || walletSession.IsOfflineMode || string.IsNullOrWhiteSpace(walletSession.GatewayBaseUrl))
+        {
+            nextLeaderboardRefreshAt = Time.unscaledTime + LeaderboardRefreshIntervalSeconds;
+            return;
+        }
+
+        StartCoroutine(FetchLeaderboardRoutine());
+    }
+
+    private IEnumerator FetchLeaderboardRoutine()
+    {
+        leaderboardRequestInFlight = true;
+
+        string endpoint = BuildLeaderboardEndpoint();
+        using (UnityWebRequest request = UnityWebRequest.Get(endpoint))
+        {
+            request.timeout = 8;
+            if (walletSession != null && !string.IsNullOrWhiteSpace(walletSession.AccessToken))
+            {
+                request.SetRequestHeader("Authorization", "Bearer " + walletSession.AccessToken);
+            }
+
+            yield return request.SendWebRequest();
+
+            if (request.result == UnityWebRequest.Result.Success)
+            {
+                LeaderboardResponseMessage response = null;
+                try
+                {
+                    response = JsonUtility.FromJson<LeaderboardResponseMessage>(request.downloadHandler.text);
+                }
+                catch
+                {
+                }
+
+                if (response != null)
+                {
+                    cachedLeaderboardResponse = response;
+                    leaderboardDirty = true;
+                }
+            }
+        }
+
+        leaderboardRequestInFlight = false;
+        nextLeaderboardRefreshAt = Time.unscaledTime + LeaderboardRefreshIntervalSeconds;
+    }
+
+    private string BuildLeaderboardEndpoint()
+    {
+        string baseUrl = walletSession != null
+            ? walletSession.GatewayBaseUrl
+            : RuntimeEndpointResolver.ResolveGatewayBaseUrl(string.Empty);
+        return baseUrl.TrimEnd('/') + $"/leaderboard?limit={LeaderboardFetchLimit}";
+    }
+
+    private void ApplyLeaderboardView()
+    {
+        if (leaderboard == null)
+        {
+            return;
+        }
+
+        leaderboardStandings.Clear();
+        leaderboardLines.Clear();
+
+        PlayerState player = viewModel != null ? viewModel.PlayerState : null;
+        string viewerWallet = player != null ? player.walletAddress : string.Empty;
+        bool hasRemoteData = cachedLeaderboardResponse != null && cachedLeaderboardResponse.players != null && cachedLeaderboardResponse.players.Length > 0;
+
+        if (hasRemoteData)
+        {
+            for (int i = 0; i < cachedLeaderboardResponse.players.Length; i++)
+            {
+                LeaderboardEntryMessage entry = cachedLeaderboardResponse.players[i];
+                if (entry == null || string.IsNullOrWhiteSpace(entry.wallet_address))
+                {
+                    continue;
+                }
+
+                leaderboardStandings.Add(new LeaderboardStanding
+                {
+                    wallet = entry.wallet_address,
+                    username = entry.username,
+                    displayName = entry.displayName,
+                    score = entry.sustainability_score,
+                    ownedTiles = entry.owned_tiles_count,
+                    actionsTaken = entry.actions_taken
+                });
+            }
+        }
+
+        if (player != null && !string.IsNullOrWhiteSpace(player.walletAddress))
+        {
+            bool replaced = false;
+            for (int i = 0; i < leaderboardStandings.Count; i++)
+            {
+                if (!string.Equals(leaderboardStandings[i].wallet, player.walletAddress, StringComparison.OrdinalIgnoreCase))
+                {
+                    continue;
+                }
+
+                LeaderboardStanding updated = leaderboardStandings[i];
+                updated.score = player.sustainabilityScore;
+                updated.ownedTiles = player.ownedTilesCount;
+                updated.actionsTaken = player.actionsTaken;
+                leaderboardStandings[i] = updated;
+                replaced = true;
+                break;
+            }
+
+            if (!replaced)
+            {
+                leaderboardStandings.Add(new LeaderboardStanding
+                {
+                    wallet = player.walletAddress,
+                    username = walletSession != null ? walletSession.Username : string.Empty,
+                    displayName = walletSession != null ? walletSession.DisplayName : string.Empty,
+                    score = player.sustainabilityScore,
+                    ownedTiles = player.ownedTilesCount,
+                    actionsTaken = player.actionsTaken
+                });
+            }
+        }
+
+        leaderboardStandings.Sort(CompareLeaderboardStandings);
+
+        int viewerIndex = -1;
+        for (int i = 0; i < leaderboardStandings.Count && i < 5; i++)
+        {
+            LeaderboardStanding standing = leaderboardStandings[i];
+            bool isViewer = !string.IsNullOrWhiteSpace(viewerWallet)
+                && string.Equals(standing.wallet, viewerWallet, StringComparison.OrdinalIgnoreCase);
+            if (isViewer)
+            {
+                viewerIndex = i;
+            }
+
+            leaderboardLines.Add(new LeaderboardLineData(
+                $"#{i + 1} {BuildLeaderboardLabel(standing)}",
+                FormatLeaderboardTiles(standing.ownedTiles),
+                isViewer));
+        }
+
+        if (viewerIndex < 0 && !string.IsNullOrWhiteSpace(viewerWallet))
+        {
+            for (int i = 5; i < leaderboardStandings.Count; i++)
+            {
+                if (!string.Equals(leaderboardStandings[i].wallet, viewerWallet, StringComparison.OrdinalIgnoreCase))
+                {
+                    continue;
+                }
+
+                viewerIndex = i;
+                leaderboardLines.Add(new LeaderboardLineData("...", string.Empty, false));
+                LeaderboardStanding viewerStanding = leaderboardStandings[i];
+                leaderboardLines.Add(new LeaderboardLineData(
+                    $"#{i + 1} YOU",
+                    FormatLeaderboardTiles(viewerStanding.ownedTiles),
+                    true));
+                break;
+            }
+        }
+
+        int totalPlayers = hasRemoteData
+            ? Mathf.Max(cachedLeaderboardResponse.total, leaderboardStandings.Count)
+            : leaderboardStandings.Count;
+        string subtitle = walletSession != null && walletSession.IsOfflineMode
+            ? "LOCAL SESSION"
+            : (hasRemoteData ? $"RANKED BY TILES · {totalPlayers} PLAYERS" : "SYNCING GLOBAL RANKS");
+
+        string emptyState = walletSession != null && walletSession.IsOfflineMode
+            ? "NO GLOBAL RANKS IN OFFLINE MODE"
+            : "AWAITING LEADERBOARD";
+
+        leaderboard.Refresh(":: GLOBAL BOARD", subtitle, leaderboardLines, emptyState);
+        leaderboardDirty = false;
+
+        if (player != null)
+        {
+            lastLeaderboardOwnedTiles = player.ownedTilesCount;
+        }
+    }
+
+    private string BuildLeaderboardLabel(LeaderboardStanding standing)
+    {
+        string rawLabel = !string.IsNullOrWhiteSpace(standing.displayName)
+            ? standing.displayName
+            : (!string.IsNullOrWhiteSpace(standing.username) ? standing.username : string.Empty);
+        if (!string.IsNullOrWhiteSpace(rawLabel))
+        {
+            return rawLabel.ToUpperInvariant();
+        }
+
+        if (orchestrator != null)
+        {
+            return orchestrator.DescribeOwnerLabel(standing.wallet).ToUpperInvariant();
+        }
+
+        return ShortWalletLabel(standing.wallet);
+    }
+
+    private static string FormatLeaderboardTiles(int ownedTiles)
+    {
+        return $"{Mathf.Max(0, ownedTiles)}T";
+    }
+
+    private static int CompareLeaderboardStandings(LeaderboardStanding left, LeaderboardStanding right)
+    {
+        int byOwnedTiles = right.ownedTiles.CompareTo(left.ownedTiles);
+        if (byOwnedTiles != 0)
+        {
+            return byOwnedTiles;
+        }
+
+        int byScore = right.score.CompareTo(left.score);
+        if (byScore != 0)
+        {
+            return byScore;
+        }
+
+        return string.Compare(left.wallet, right.wallet, StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static string ShortWalletLabel(string wallet)
+    {
+        if (string.IsNullOrWhiteSpace(wallet))
+        {
+            return "UNKNOWN";
+        }
+
+        string trimmed = wallet.Trim();
+        if (trimmed.Length <= 12)
+        {
+            return trimmed.ToUpperInvariant();
+        }
+
+        return $"{trimmed.Substring(0, 6)}...{trimmed.Substring(trimmed.Length - 4)}".ToUpperInvariant();
     }
 
     private string BuildFieldLogClimateStatus()
@@ -1080,6 +1617,7 @@ public class CommandTableHudPresenter : MonoBehaviour
             return;
         }
 
+        Debug.Log($"HUD action requested: {actionType}");
         PlayFeedback(actionClickFeedback);
         orchestrator.RequestAction(actionType);
     }
@@ -1097,6 +1635,7 @@ public class CommandTableHudPresenter : MonoBehaviour
             FiniteEarthActionType.BuildSettlement => "Settlement Built",
             FiniteEarthActionType.BuildBarracks => "Barracks Built",
             FiniteEarthActionType.BuildIndustry => "Industry Built",
+            FiniteEarthActionType.RemoveBuilding => "Building Removed",
             FiniteEarthActionType.HarvestForest => "Forest Harvested",
             FiniteEarthActionType.Reforest => "Reforesting Started",
             FiniteEarthActionType.Farm => "Farm Established",
@@ -1171,7 +1710,7 @@ public class CommandTableHudPresenter : MonoBehaviour
         target.color = ResolveModifierColor(modifierPercent);
     }
 
-    private void ApplyRateModifierMeta(TMP_Text target, int perMinute, float modifierPercent, bool visible = true)
+    private void ApplyRateModifierMeta(TMP_Text target, float perMinute, float modifierPercent, bool visible = true)
     {
         if (target == null)
         {
@@ -1186,7 +1725,7 @@ public class CommandTableHudPresenter : MonoBehaviour
 
         string colorHex = ColorUtility.ToHtmlStringRGB(ResolveModifierColor(modifierPercent));
         target.color = mutedTextColor;
-        target.text = $"[{perMinute}/MIN] <color=#{colorHex}>{FormatModifierLine(modifierPercent)}</color>";
+        target.text = $"[{FormatPerMinuteRate(perMinute)}/MIN] <color=#{colorHex}>{FormatModifierLine(modifierPercent)}</color>";
     }
 
     private string BuildResourceLine(string label, int amount)
@@ -1194,9 +1733,17 @@ public class CommandTableHudPresenter : MonoBehaviour
         return $"{label} {amount}";
     }
 
-    private string BuildResourceLine(string label, int amount, int perMinute)
+    private string BuildResourceLine(string label, int amount, float perMinute)
     {
-        return $"{label} {amount} [{perMinute}/MIN]";
+        return $"{label} {amount} [{FormatPerMinuteRate(perMinute)}/MIN]";
+    }
+
+    private static string FormatPerMinuteRate(float perMinute)
+    {
+        float rounded = Mathf.Round(perMinute * 100f) / 100f;
+        return Mathf.Approximately(rounded, Mathf.Round(rounded))
+            ? Mathf.RoundToInt(rounded).ToString()
+            : rounded.ToString("0.##");
     }
 
     private string FormatModifierLine(float modifierPercent)
@@ -1431,6 +1978,11 @@ public class CommandTableHudPresenter : MonoBehaviour
     private void MarkSceneDirtyIfNeeded()
     {
 #if UNITY_EDITOR
+        if (gameObject == null || Application.isPlaying || EditorApplication.isPlayingOrWillChangePlaymode)
+        {
+            return;
+        }
+
         if (gameObject != null)
         {
             EditorUtility.SetDirty(gameObject);

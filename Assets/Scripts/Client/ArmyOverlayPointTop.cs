@@ -24,33 +24,42 @@ public class ArmyOverlayPointTop : MonoBehaviour
 
     public void RenderArmies(IReadOnlyList<ArmyUnit> armies, System.Func<string, Color> resolveColor)
     {
-        if (armyTilemap == null)
-        {
-            EnsureArmyLayer();
-        }
-
-        if (armyTilemap == null || armies == null)
-        {
-            return;
-        }
+        if (armyTilemap == null) EnsureArmyLayer();
+        if (armyTilemap == null || armies == null) return;
 
         foreach (Vector3Int cell in occupiedCells)
-        {
             armyTilemap.SetTile(cell, null);
-        }
         occupiedCells.Clear();
 
+        // Aggregate armies per cell so stacked armies render visibly.
+        var cellGroups = new Dictionary<Vector3Int, (Color color, int count)>();
         for (int i = 0; i < armies.Count; i++)
         {
             ArmyUnit unit = armies[i];
             Vector3Int cell = unit.coord.ToVector3Int();
-            if (!worldGenerator.HasTile(cell))
-            {
-                continue;
-            }
+            if (!worldGenerator.HasTile(cell)) continue;
+
+            Color c = resolveColor != null ? resolveColor(unit.ownerWallet) : Color.white;
+            if (cellGroups.TryGetValue(cell, out var existing))
+                cellGroups[cell] = (existing.color, existing.count + 1);
+            else
+                cellGroups[cell] = (c, 1);
+        }
+
+        foreach (var kvp in cellGroups)
+        {
+            Vector3Int cell = kvp.Key;
+            Color baseColor = kvp.Value.color;
+            int count = kvp.Value.count;
+
+            // Brighten the dot when multiple armies share the tile so the player
+            // can tell more than one unit is present even if they haven't spread yet.
+            Color renderColor = count > 1
+                ? Color.Lerp(baseColor, Color.white, 0.45f * Mathf.Min(count - 1, 3) / 3f)
+                : baseColor;
 
             armyTilemap.SetTile(cell, armyTile);
-            armyTilemap.SetColor(cell, resolveColor != null ? resolveColor(unit.ownerWallet) : Color.white);
+            armyTilemap.SetColor(cell, renderColor);
             occupiedCells.Add(cell);
         }
     }

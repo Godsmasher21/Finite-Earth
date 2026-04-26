@@ -5,7 +5,7 @@ public class GameStateViewModel : MonoBehaviour
 {
     [SerializeField] private string worldId = "finite-earth-alpha";
     [SerializeField, Min(1)] private int cycleSeconds = 30;
-    [SerializeField, Min(1)] private int actionsPerCycle = 3;
+    [SerializeField, Min(1)] private int actionsPerCycle = 9999;
     [SerializeField, Min(1)] private int settlementRadius = 3;
     [SerializeField] private bool requireAdjacency = true;
     [SerializeField] private bool requireSettlementRadius = true;
@@ -73,23 +73,41 @@ public class GameStateViewModel : MonoBehaviour
         }
     }
 
+    public void SyncClientSequence(long lastCommittedClientSeq)
+    {
+        long safeLast = Math.Max(0L, lastCommittedClientSeq);
+        nextClientSeq = Math.Max(nextClientSeq, safeLast + 1L);
+
+        if (PlayerState != null)
+        {
+            PlayerState.lastClientSeq = Math.Max(PlayerState.lastClientSeq, safeLast);
+        }
+    }
+
     public ActionIntent BuildIntent(FiniteEarthActionType actionType, HexCoord coord, BuildingType buildingType = BuildingType.None)
     {
         long issuedAtMs = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
-        string intentId = $"{walletAddress}-{nextClientSeq}-{issuedAtMs}";
+        long lastCommittedClientSeq = PlayerState != null ? Math.Max(0L, PlayerState.lastClientSeq) : 0L;
+        long clientSeq = Math.Max(nextClientSeq, lastCommittedClientSeq + 1L);
+        string intentId = $"{walletAddress}-{clientSeq}-{issuedAtMs}";
 
         ActionIntent intent = new ActionIntent(
             intentId,
             worldId,
             walletAddress,
-            nextClientSeq,
+            clientSeq,
             actionType,
             coord.q,
             coord.r,
             buildingType,
             issuedAtMs);
 
-        nextClientSeq++;
+        nextClientSeq = clientSeq + 1L;
+        if (PlayerState != null)
+        {
+            PlayerState.lastClientSeq = clientSeq;
+        }
+
         return intent;
     }
 

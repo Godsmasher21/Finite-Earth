@@ -65,10 +65,10 @@ public class ActionPanelPresenter : MonoBehaviour
 
     private static readonly FiniteEarthActionType[] OrderedActions =
     {
-        FiniteEarthActionType.Claim,
         FiniteEarthActionType.BuildSettlement,
         FiniteEarthActionType.BuildBarracks,
         FiniteEarthActionType.BuildIndustry,
+        FiniteEarthActionType.RemoveBuilding,
         FiniteEarthActionType.HarvestForest,
         FiniteEarthActionType.Reforest,
         FiniteEarthActionType.Farm,
@@ -659,7 +659,7 @@ public class ActionPanelPresenter : MonoBehaviour
             }
             else if (!claimable && !string.IsNullOrWhiteSpace(claimReason))
             {
-                asciiFooterText.text = Truncate($"Claim blocked: {claimReason}", 90);
+                asciiFooterText.text = Truncate($"Status: {claimReason}", 90);
             }
             else
             {
@@ -716,11 +716,11 @@ public class ActionPanelPresenter : MonoBehaviour
         }
         else if (selectionCount > 1)
         {
-            line2 = BuildAsciiLine($"{selectionCount} TILES | CLAIM {(claimable ? "YES" : "NO")}");
+            line2 = BuildAsciiLine($"{selectionCount} TILES | STATUS {(claimable ? "READY" : "LOCK")}");
         }
         else
         {
-            line2 = BuildAsciiLine($"Q{coord.q} R{coord.r} | CLAIM {(claimable ? "YES" : "NO")}");
+            line2 = BuildAsciiLine($"Q{coord.q} R{coord.r} | STATUS {(claimable ? "READY" : "LOCK")}");
         }
 
         return $"{line1}\n{line2}";
