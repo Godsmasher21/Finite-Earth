@@ -356,7 +356,8 @@ app.post("/auth/siwe/verify", async (req, res) => {
   }
 });
 
-app.post("/auth/credentials/login", async (req, res) => {
+app.post("/auth/credentials/login", async (req, res, next) => {
+  try {
   const parsed = credentialSchema.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: "Invalid credential login payload." });
@@ -376,9 +377,11 @@ app.post("/auth/credentials/login", async (req, res) => {
     username: authResult.username ?? "",
     displayName: authResult.displayName ?? authResult.username ?? ""
   }));
+  } catch (err) { next(err); }
 });
 
-app.post("/auth/credentials/signup", async (req, res) => {
+app.post("/auth/credentials/signup", async (req, res, next) => {
+  try {
   const parsed = credentialSignupSchema.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: "Invalid credential signup payload." });
@@ -406,6 +409,7 @@ app.post("/auth/credentials/signup", async (req, res) => {
     username: authResult.username ?? username,
     displayName: authResult.displayName ?? authResult.username ?? username
   }));
+  } catch (err) { next(err); }
 });
 
 app.post("/auth/refresh", (req, res) => {
@@ -714,6 +718,16 @@ wsServer.on("connection", (socket, request) => {
       });
     }
   });
+});
+
+// Global error handler — catches unhandled async route exceptions so Express 4
+// doesn't silently drop the response and leave Railway to return a blank 500.
+app.use((err: unknown, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
+  const message = err instanceof Error ? err.message : String(err);
+  console.error("[gateway] unhandled route error:", message);
+  if (!res.headersSent) {
+    res.status(500).json({ error: `Internal server error: ${message}` });
+  }
 });
 
 connectToSpacetime();
