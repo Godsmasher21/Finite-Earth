@@ -90,6 +90,36 @@ contract TileNFT is ERC721, Ownable {
         }
     }
 
+    /**
+     * @notice Batch-claim multiple tiles in a single transaction.
+     * Saves RPC round-trips when a settlement claims several tiles at once.
+     */
+    function claimTileBatch(
+        address[] calldata wallets,
+        int32[] calldata qs,
+        int32[] calldata rs
+    ) external {
+        require(msg.sender == minter, "TileNFT: not minter");
+        require(wallets.length == qs.length && qs.length == rs.length, "TileNFT: length mismatch");
+        for (uint256 i = 0; i < wallets.length; i++) {
+            address wallet = wallets[i];
+            if (wallet == address(0)) continue;
+            uint256 tokenId = _packCoord(qs[i], rs[i]);
+            if (_ownerOf(tokenId) == address(0)) {
+                _safeMint(wallet, tokenId);
+                tokenQ[tokenId] = qs[i];
+                tokenR[tokenId] = rs[i];
+                tileOwner[tokenId] = wallet;
+                emit TileClaimed(wallet, qs[i], rs[i], tokenId);
+                emit Locked(tokenId);
+            } else {
+                address prev = tileOwner[tokenId];
+                tileOwner[tokenId] = wallet;
+                emit TileTransferred(prev, wallet, qs[i], rs[i], tokenId);
+            }
+        }
+    }
+
     // ── Soulbound — block all user-initiated transfers ────────────────────────
 
     function transferFrom(address, address, uint256) public pure override {

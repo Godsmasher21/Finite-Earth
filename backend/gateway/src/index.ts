@@ -54,7 +54,8 @@ const GLOBAL_COUNTERS_ABI = [
 ];
 
 const TILE_NFT_ABI = [
-  "function claimTile(address wallet, int32 q, int32 r) external"
+  "function claimTile(address wallet, int32 q, int32 r) external",
+  "function claimTileBatch(address[] calldata wallets, int32[] calldata qs, int32[] calldata rs) external"
 ];
 
 const FOREST_TOKEN_ABI = [
@@ -1214,25 +1215,37 @@ function handleActionCommitEvent(row: ActionCommitEventRow): void {
 async function drainTileMintQueue(): Promise<void> {
   if (!tileNftContract || pendingTileMints.length === 0) return;
 
-  const batch = pendingTileMints.splice(0, 10); // process up to 10 per tick
-  for (const { wallet, q, r } of batch) {
-    try {
-      const tx = await tileNftContract.claimTile(wallet, q, r);
-      console.log(`[chain] TileNFT claimTile(${wallet}, ${q}, ${r}) tx=${tx.hash}`);
-      // Track on-chain tile count in the leaderboard.
-      const normalizedWallet = normalizeWalletAddress(wallet);
-      db.prepare(`
-        INSERT INTO leaderboard (wallet_address, sustainability_score, actions_taken, owned_tiles_count, tile_nft_count, updated_at_ms)
-        VALUES (?, 0, 0, 0, 1, ?)
-        ON CONFLICT(wallet_address) DO UPDATE SET
-          tile_nft_count = tile_nft_count + 1,
-          updated_at_ms = excluded.updated_at_ms
-      `).run(normalizedWallet, Date.now());
-    } catch (err) {
-      console.error(`[chain] TileNFT claimTile failed for (${q},${r}):`, err);
-      // Re-queue on failure so it retries next interval.
-      pendingTileMints.push({ wallet, q, r });
+  // Drain everything queued so far as a single batch transaction — one RPC call
+  // regardless of how many tiles were claimed at once (settlement radius etc).
+  const batch = pendingTileMints.splice(0, pendingTileMints.length);
+  const wallets = batch.map(t => t.wallet);
+  const qs      = batch.map(t => t.q);
+  const rs      = batch.map(t => t.r);
+
+  try {
+    const tx = await tileNftContract.claimTileBatch(wallets, qs, rs);
+    console.log(`[chain] TileNFT claimTileBatch(${batch.length} tiles) tx=${tx.hash}`);
+    const now = Date.now();
+    // Tally per-wallet counts for leaderboard.
+    const countByWallet = new Map<string, number>();
+    for (const w of wallets) {
+      const key = normalizeWalletAddress(w);
+      countByWallet.set(key, (countByWallet.get(key) ?? 0) + 1);
     }
+    const stmt = db.prepare(`
+      INSERT INTO leaderboard (wallet_address, sustainability_score, actions_taken, owned_tiles_count, tile_nft_count, updated_at_ms)
+      VALUES (?, 0, 0, 0, ?, ?)
+      ON CONFLICT(wallet_address) DO UPDATE SET
+        tile_nft_count = tile_nft_count + excluded.tile_nft_count,
+        updated_at_ms = excluded.updated_at_ms
+    `);
+    for (const [wallet, count] of countByWallet) {
+      stmt.run(wallet, count, now);
+    }
+  } catch (err) {
+    console.error(`[chain] TileNFT claimTileBatch failed (${batch.length} tiles):`, err);
+    // Re-queue the whole batch for retry next interval.
+    pendingTileMints.unshift(...batch);
   }
 }
 

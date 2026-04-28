@@ -12,10 +12,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: bd70afc722aaa9d4698764ee18455c7c, type: 3}
   m_Name: GameConfig
   m_EditorClassIdentifier:
-  gatewayBaseUrl: https://finite-earth-gateway.up.railway.app
+  gatewayBaseUrl: https://finite-earth-production.up.railway.app
   realtimeEndpoint:
   siweDomain: finite-earth.itch.io
   megaEthRpc: https://6342.rpc.thirdweb.com
-  tileNftAddress: 0x8D5Edb8EE8e7CC188b6d3E974F6A19cbd42C20Df
+  tileNftAddress: 0x8dEebef42D0cA77883Afda6610C3cC4Da9bBB072
   forestTokenAddress: 0xc8ca68d22Ba46391C1C32DAE749b7232B9E3Ab74
   carbonTokenAddress: 0x135eECda61ba638095C6c29d0FC8fcc0B69fD947
