@@ -29,6 +29,7 @@ export interface TileNFTInterface extends Interface {
       | "approve"
       | "balanceOf"
       | "claimTile"
+      | "claimTileBatch"
       | "getApproved"
       | "isApprovedForAll"
       | "locked"
@@ -75,6 +76,10 @@ export interface TileNFTInterface extends Interface {
   encodeFunctionData(
     functionFragment: "claimTile",
     values: [AddressLike, BigNumberish, BigNumberish]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "claimTileBatch",
+    values: [AddressLike[], BigNumberish[], BigNumberish[]]
   ): string;
   encodeFunctionData(
     functionFragment: "getApproved",
@@ -149,6 +154,10 @@ export interface TileNFTInterface extends Interface {
   decodeFunctionResult(functionFragment: "approve", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "balanceOf", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "claimTile", data: BytesLike): Result;
+  decodeFunctionResult(
+    functionFragment: "claimTileBatch",
+    data: BytesLike
+  ): Result;
   decodeFunctionResult(
     functionFragment: "getApproved",
     data: BytesLike
@@ -404,6 +413,12 @@ export interface TileNFT extends BaseContract {
     "nonpayable"
   >;
 
+  claimTileBatch: TypedContractMethod<
+    [wallets: AddressLike[], qs: BigNumberish[], rs: BigNumberish[]],
+    [void],
+    "nonpayable"
+  >;
+
   getApproved: TypedContractMethod<[tokenId: BigNumberish], [string], "view">;
 
   isApprovedForAll: TypedContractMethod<
@@ -492,6 +507,13 @@ export interface TileNFT extends BaseContract {
     nameOrSignature: "claimTile"
   ): TypedContractMethod<
     [wallet: AddressLike, q: BigNumberish, r: BigNumberish],
+    [void],
+    "nonpayable"
+  >;
+  getFunction(
+    nameOrSignature: "claimTileBatch"
+  ): TypedContractMethod<
+    [wallets: AddressLike[], qs: BigNumberish[], rs: BigNumberish[]],
     [void],
     "nonpayable"
   >;

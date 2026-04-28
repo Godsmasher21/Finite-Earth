@@ -336,7 +336,7 @@ public static partial class Module
 
     [SpacetimeDB.Table(Accessor = "WorldState", Public = true)]
     public partial struct WorldStateRow
-    {
+     {
         [SpacetimeDB.PrimaryKey]
         public string WorldId;
         public long Tick;
@@ -1358,6 +1358,54 @@ public static partial class Module
     public static void SeedDefaultWorld(ReducerContext ctx)
     {
         SeedRows(ctx, DefaultSeedRows, DefaultSeedRows.Length);
+    }
+
+    /// <summary>
+    /// Resets all game state (tiles, players, armies, pacts, events, world counters)
+    /// while preserving CredentialAccounts and PlayerIdentities so players can
+    /// log back in with existing credentials and get a fresh game state.
+    /// </summary>
+    [SpacetimeDB.Reducer]
+    public static void ResetWorld(ReducerContext ctx)
+    {
+        // Clear game tables — order matters for any FK-like dependencies.
+        foreach (var row in ctx.Db.Armies.Iter().ToList())
+            ctx.Db.Armies.Id.Delete(row.Id);
+
+        foreach (var row in ctx.Db.Pacts.Iter().ToList())
+            ctx.Db.Pacts.Id.Delete(row.Id);
+
+        // ActionCommitEvents is an Event table (append-only) — cannot delete rows.
+        foreach (var row in ctx.Db.ClimateEvents.Iter().ToList())
+            ctx.Db.ClimateEvents.Id.Delete(row.Id);
+
+        foreach (var row in ctx.Db.TradeOffers.Iter().ToList())
+            ctx.Db.TradeOffers.Id.Delete(row.Id);
+
+        foreach (var row in ctx.Db.Players.Iter().ToList())
+            ctx.Db.Players.Wallet.Delete(row.Wallet);
+
+        foreach (var row in ctx.Db.Tiles.Iter().ToList())
+            ctx.Db.Tiles.Id.Delete(row.Id);
+
+        // Reset world state counters.
+        if (ctx.Db.WorldState.WorldId.Find(DefaultWorldId) is WorldStateRow ws)
+        {
+            ctx.Db.WorldState.WorldId.Update(ws with
+            {
+                Tick          = 0,
+                Cycle         = 0,
+                ForestTotal   = 0,
+                CarbonTotal   = 0,
+                InitialForest = 0,
+                RecoveryIndexBuilt = false
+            });
+        }
+
+        // Re-seed world terrain (tiles without owners).
+        SeedRows(ctx, DefaultSeedRows, DefaultSeedRows.Length);
+
+        Log.Info("[ResetWorld] World reset complete. Credentials preserved.");
     }
 
     // ─── Action application ───────────────────────────────────────────────────

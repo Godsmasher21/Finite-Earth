@@ -74,6 +74,7 @@ contracts/cache/
 contracts/typechain-types/
 contracts/coverage/
 contracts/coverage.json
+blockchain/artifacts/build-info/
 
 # ----------------------------
 # Runtime data, secrets, and local env
@@ -132,6 +133,13 @@ backend/gateway/.tmp_*.out.log
 *.docx
 *.pptx
 finite_earth_ppt_plan.md
+
+# ----------------------------
+# Generated image/diagram outputs
+# ----------------------------
+png/
+**/*.mmd
+FiniteEarth_Architecture.png
 
 # ----------------------------
 # OS files

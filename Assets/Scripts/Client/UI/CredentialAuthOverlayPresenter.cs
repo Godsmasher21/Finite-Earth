@@ -11,15 +11,15 @@ public class CredentialAuthOverlayPresenter : MonoBehaviour
     private const string DefaultGatewayBaseUrl = RuntimeEndpointResolver.DefaultGatewayBaseUrl;
 
     [SerializeField] private WalletSessionController walletSession;
-    [SerializeField] private Vector2 panelSize = new Vector2(920f, 620f);
+    [SerializeField] private Vector2 panelSize = new Vector2(920f, 610f);
     [SerializeField] private int canvasSortingOrder = 240;
-    [SerializeField] private float loginFormHeight = 196f;
-    [SerializeField] private float signupFormHeight = 292f;
+    [SerializeField] private float loginFormHeight = 200f;
+    [SerializeField] private float signupFormHeight = 296f;
     [SerializeField] private float fieldRowHeight = 84f;
     [SerializeField] private float inputHeight = 56f;
-    [SerializeField] private float tabRowHeight = 58f;
-    [SerializeField] private float statusCardHeight = 56f;
-    [SerializeField] private float actionRowHeight = 62f;
+    [SerializeField] private float tabRowHeight = 52f;
+    [SerializeField] private float statusCardHeight = 50f;
+    [SerializeField] private float actionRowHeight = 56f;
     [SerializeField] private Color overlayColor = new Color(0.01f, 0.04f, 0.05f, 0.82f);
     [SerializeField] private Color panelColor = new Color(0.04f, 0.08f, 0.09f, 0.97f);
     [SerializeField] private Color borderColor = new Color(0.26f, 0.91f, 0.70f, 1f);
@@ -163,8 +163,8 @@ public class CredentialAuthOverlayPresenter : MonoBehaviour
         panelOutline.useGraphicAlpha = true;
 
         VerticalLayoutGroup layout = panelRoot.gameObject.AddComponent<VerticalLayoutGroup>();
-        layout.padding = new RectOffset(28, 28, 28, 28);
-        layout.spacing = 14f;
+        layout.padding = new RectOffset(24, 24, 18, 18);
+        layout.spacing = 10f;
         layout.childAlignment = TextAnchor.UpperLeft;
         layout.childControlWidth = true;
         layout.childControlHeight = true;
@@ -176,12 +176,8 @@ public class CredentialAuthOverlayPresenter : MonoBehaviour
         SetPreferredHeight(title, 40f);
 
         Text subtitle = CreateText(panelRoot, "Subtitle", 17, FontStyle.Normal, TextAnchor.UpperLeft, mutedTextColor);
-        subtitle.text = "Sign in with your username and password, or create a new account with username, password, and confirm password.";
-        SetPreferredHeight(subtitle, 54f);
-
-        gatewayLabel = CreateText(panelRoot, "Gateway", 15, FontStyle.Normal, TextAnchor.UpperLeft, mutedTextColor);
-        gatewayLabel.text = BuildGatewayCaption();
-        SetPreferredHeight(gatewayLabel, 22f);
+        subtitle.text = "Sign in to an existing account, or create a new one to start playing.";
+        SetPreferredHeight(subtitle, 28f);
 
         RectTransform tabRow = CreateContainer("TabRow", panelRoot);
         SetPreferredHeight(tabRow, tabRowHeight);
@@ -229,10 +225,6 @@ public class CredentialAuthOverlayPresenter : MonoBehaviour
         confirmLabel.text = "CONFIRM PASSWORD";
         SetPreferredHeight(confirmLabel, 18f);
         confirmPasswordField = CreateStandaloneInput(confirmFieldRoot, "confirm password", true);
-
-        Text hint = CreateText(panelRoot, "Hint", 16, FontStyle.Normal, TextAnchor.UpperLeft, mutedTextColor);
-        hint.text = "Seeded test account: Coulson / GH325";
-        SetPreferredHeight(hint, 22f);
 
         RectTransform statusCard = CreateContainer("StatusCard", panelRoot);
         SetPreferredHeight(statusCard, statusCardHeight);
@@ -391,11 +383,6 @@ public class CredentialAuthOverlayPresenter : MonoBehaviour
         if (!shouldShow)
         {
             return;
-        }
-
-        if (gatewayLabel != null)
-        {
-            gatewayLabel.text = BuildGatewayCaption();
         }
 
         if (confirmFieldRoot != null)

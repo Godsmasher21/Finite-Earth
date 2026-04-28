@@ -1,0 +1,47 @@
+{
+  "_format": "hh-sol-artifact-1",
+  "contractName": "IForestToken",
+  "sourceName": "contracts/TokenSyncBatcher.sol",
+  "abi": [
+    {
+      "inputs": [],
+      "name": "lastSyncedCycle",
+      "outputs": [
+        {
+          "internalType": "uint64",
+          "name": "",
+          "type": "uint64"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint64",
+          "name": "cycleId",
+          "type": "uint64"
+        },
+        {
+          "internalType": "int256",
+          "name": "forestDelta",
+          "type": "int256"
+        },
+        {
+          "internalType": "address",
+          "name": "relayAddr",
+          "type": "address"
+        }
+      ],
+      "name": "syncForest",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    }
+  ],
+  "bytecode": "0x",
+  "deployedBytecode": "0x",
+  "linkReferences": {},
+  "deployedLinkReferences": {}
+}

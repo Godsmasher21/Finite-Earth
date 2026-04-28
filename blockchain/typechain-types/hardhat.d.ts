@@ -89,6 +89,18 @@ declare module "hardhat/types/runtime" {
       name: "TileNFT",
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.TileNFT__factory>;
+    getContractFactory(
+      name: "ICarbonToken",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.ICarbonToken__factory>;
+    getContractFactory(
+      name: "IForestToken",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.IForestToken__factory>;
+    getContractFactory(
+      name: "TokenSyncBatcher",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.TokenSyncBatcher__factory>;
 
     getContractAt(
       name: "Ownable",
@@ -185,6 +197,21 @@ declare module "hardhat/types/runtime" {
       address: string | ethers.Addressable,
       signer?: ethers.Signer
     ): Promise<Contracts.TileNFT>;
+    getContractAt(
+      name: "ICarbonToken",
+      address: string | ethers.Addressable,
+      signer?: ethers.Signer
+    ): Promise<Contracts.ICarbonToken>;
+    getContractAt(
+      name: "IForestToken",
+      address: string | ethers.Addressable,
+      signer?: ethers.Signer
+    ): Promise<Contracts.IForestToken>;
+    getContractAt(
+      name: "TokenSyncBatcher",
+      address: string | ethers.Addressable,
+      signer?: ethers.Signer
+    ): Promise<Contracts.TokenSyncBatcher>;
 
     deployContract(
       name: "Ownable",
@@ -262,6 +289,18 @@ declare module "hardhat/types/runtime" {
       name: "TileNFT",
       signerOrOptions?: ethers.Signer | DeployContractOptions
     ): Promise<Contracts.TileNFT>;
+    deployContract(
+      name: "ICarbonToken",
+      signerOrOptions?: ethers.Signer | DeployContractOptions
+    ): Promise<Contracts.ICarbonToken>;
+    deployContract(
+      name: "IForestToken",
+      signerOrOptions?: ethers.Signer | DeployContractOptions
+    ): Promise<Contracts.IForestToken>;
+    deployContract(
+      name: "TokenSyncBatcher",
+      signerOrOptions?: ethers.Signer | DeployContractOptions
+    ): Promise<Contracts.TokenSyncBatcher>;
 
     deployContract(
       name: "Ownable",
@@ -358,6 +397,21 @@ declare module "hardhat/types/runtime" {
       args: any[],
       signerOrOptions?: ethers.Signer | DeployContractOptions
     ): Promise<Contracts.TileNFT>;
+    deployContract(
+      name: "ICarbonToken",
+      args: any[],
+      signerOrOptions?: ethers.Signer | DeployContractOptions
+    ): Promise<Contracts.ICarbonToken>;
+    deployContract(
+      name: "IForestToken",
+      args: any[],
+      signerOrOptions?: ethers.Signer | DeployContractOptions
+    ): Promise<Contracts.IForestToken>;
+    deployContract(
+      name: "TokenSyncBatcher",
+      args: any[],
+      signerOrOptions?: ethers.Signer | DeployContractOptions
+    ): Promise<Contracts.TokenSyncBatcher>;
 
     // default types
     getContractFactory(
