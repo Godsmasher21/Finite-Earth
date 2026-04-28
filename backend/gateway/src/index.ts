@@ -40,8 +40,9 @@ const MEGAETH_RPC_URL      = process.env.MEGAETH_RPC_URL        ?? "";
 const RELAYER_PRIVATE_KEY  = process.env.RELAYER_PRIVATE_KEY    ?? "";
 const GLOBAL_COUNTERS_ADDRESS = process.env.GLOBAL_COUNTERS_ADDRESS ?? "";
 const TILE_NFT_ADDRESS     = process.env.TILE_NFT_ADDRESS       ?? "";
-const FOREST_TOKEN_ADDRESS = process.env.FOREST_TOKEN_ADDRESS   ?? "";
-const CARBON_TOKEN_ADDRESS = process.env.CARBON_TOKEN_ADDRESS   ?? "";
+const FOREST_TOKEN_ADDRESS       = process.env.FOREST_TOKEN_ADDRESS        ?? "";
+const CARBON_TOKEN_ADDRESS       = process.env.CARBON_TOKEN_ADDRESS        ?? "";
+const TOKEN_SYNC_BATCHER_ADDRESS = process.env.TOKEN_SYNC_BATCHER_ADDRESS  ?? "";
 const CHAIN_RELAY_POLL_MS  = Number(process.env.CHAIN_RELAY_POLL_MS ?? 3000);
 const MAX_CHAIN_BATCH_ACTIONS = 200;
 
@@ -58,15 +59,10 @@ const TILE_NFT_ABI = [
   "function claimTileBatch(address[] calldata wallets, int32[] calldata qs, int32[] calldata rs) external"
 ];
 
-const FOREST_TOKEN_ABI = [
-  "function syncForest(uint64 cycleId, int256 forestDelta, address relayAddr) external",
-  "function rewardPlayer(address wallet, uint256 forestTiles, uint64 cycleId) external"
-];
-
-const CARBON_TOKEN_ABI = [
-  "function syncCarbon(uint64 cycleId, int256 carbonDelta, address relayAddr) external",
-  "function emitCarbon(address wallet, uint256 carbonUnits, uint64 cycleId) external",
-  "function offsetCarbon(address wallet, uint256 carbonUnits, uint64 cycleId) external"
+// TokenSyncBatcher batches syncForest + syncCarbon into one tx per cycle.
+const TOKEN_SYNC_BATCHER_ABI = [
+  "function syncBoth(uint64 cycleId, int256 forestDelta, int256 carbonDelta, address relayAddr) external",
+  "function mintInitial(int256 forestTotal, int256 carbonTotal, address relayAddr) external"
 ];
 
 type GatewayWebSocket = WebSocket & {
@@ -176,8 +172,7 @@ const hasChainRelayConfig = Boolean(MEGAETH_RPC_URL && RELAYER_PRIVATE_KEY && GL
 let chainEnabled = false;
 let globalCountersContract: Contract | null = null;
 let tileNftContract: Contract | null = null;
-let forestTokenContract: Contract | null = null;
-let carbonTokenContract: Contract | null = null;
+let tokenSyncBatcher: Contract | null = null;
 let relayerAddress = "";
 
 // Queue for tile-claim mints so we don't block the event loop.
@@ -219,14 +214,9 @@ if (hasChainRelayConfig) {
       console.log(`[gateway] TileNFT relay enabled at ${TILE_NFT_ADDRESS}`);
     }
 
-    if (isAddress(FOREST_TOKEN_ADDRESS)) {
-      forestTokenContract = new Contract(FOREST_TOKEN_ADDRESS, FOREST_TOKEN_ABI, signer);
-      console.log(`[gateway] ForestToken relay enabled at ${FOREST_TOKEN_ADDRESS}`);
-    }
-
-    if (isAddress(CARBON_TOKEN_ADDRESS)) {
-      carbonTokenContract = new Contract(CARBON_TOKEN_ADDRESS, CARBON_TOKEN_ABI, signer);
-      console.log(`[gateway] CarbonToken relay enabled at ${CARBON_TOKEN_ADDRESS}`);
+    if (isAddress(TOKEN_SYNC_BATCHER_ADDRESS)) {
+      tokenSyncBatcher = new Contract(TOKEN_SYNC_BATCHER_ADDRESS, TOKEN_SYNC_BATCHER_ABI, signer);
+      console.log(`[gateway] TokenSyncBatcher enabled at ${TOKEN_SYNC_BATCHER_ADDRESS}`);
     }
 
     chainEnabled = true;
@@ -1217,7 +1207,8 @@ async function drainTileMintQueue(): Promise<void> {
 
   // Drain everything queued so far as a single batch transaction — one RPC call
   // regardless of how many tiles were claimed at once (settlement radius etc).
-  const batch = pendingTileMints.splice(0, pendingTileMints.length);
+  // Cap at 50 per tx to stay under block gas limits on MegaETH.
+  const batch = pendingTileMints.splice(0, Math.min(50, pendingTileMints.length));
   const wallets = batch.map(t => t.wallet);
   const qs      = batch.map(t => t.q);
   const rs      = batch.map(t => t.r);
@@ -1485,19 +1476,12 @@ async function processPendingChainBatches(): Promise<void> {
     finalizeCycleBatch(next, txHash);
     pendingChainQueue.shift();
 
-    // ── Sync forest/carbon token supply on MegaETH after cycle commit ────────
-    const cycleIdBig = BigInt(next.cycleId);
-    if (forestTokenContract) {
-      void forestTokenContract
-        .syncForest(cycleIdBig, BigInt(next.forestDelta), relayerAddress)
-        .then((t: { hash: string }) => console.log(`[chain] FRT syncForest cycle=${next.cycleId} tx=${t.hash}`))
-        .catch((e: unknown) => console.error("[chain] FRT syncForest failed:", e));
-    }
-    if (carbonTokenContract) {
-      void carbonTokenContract
-        .syncCarbon(cycleIdBig, BigInt(next.carbonDelta), relayerAddress)
-        .then((t: { hash: string }) => console.log(`[chain] CRT syncCarbon cycle=${next.cycleId} tx=${t.hash}`))
-        .catch((e: unknown) => console.error("[chain] CRT syncCarbon failed:", e));
+    // ── Sync forest/carbon token supply — both in ONE tx via batcher ─────────
+    if (tokenSyncBatcher && (next.forestDelta !== 0 || next.carbonDelta !== 0)) {
+      void tokenSyncBatcher
+        .syncBoth(BigInt(next.cycleId), BigInt(next.forestDelta), BigInt(next.carbonDelta), relayerAddress)
+        .then((t: { hash: string }) => console.log(`[chain] syncBoth cycle=${next.cycleId} forest=${next.forestDelta} carbon=${next.carbonDelta} tx=${t.hash}`))
+        .catch((e: unknown) => console.error("[chain] syncBoth failed:", e));
     }
   } catch (error) {
     next.attempt += 1;
