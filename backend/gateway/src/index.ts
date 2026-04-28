@@ -801,6 +801,18 @@ function registerSpacetimeCallbacks(conn: DbConnection): void {
     handleActionCommitEvent(row);
   });
 
+  // Mint a TileNFT whenever any tile changes ownership (covers settlement-radius
+  // claims, capture-pressure claims, and direct claims — not just A_CLAIM = 0).
+  conn.db.Tiles.onUpdate((ctx, oldRow, newRow) => {
+    if (ctx.event.tag === "SubscribeApplied") return; // skip initial snapshot
+    const oldOwner = (oldRow.owner ?? "").toLowerCase();
+    const newOwner = (newRow.owner ?? "").toLowerCase();
+    if (!newOwner || newOwner === oldOwner) return; // no ownership change
+    if (!chainEnabled || !tileNftContract) return;
+    if (!isAddress(newOwner)) return;
+    pendingTileMints.push({ wallet: newOwner, q: newRow.q, r: newRow.r });
+  });
+
   conn.db.WorldState.onUpdate((_ctx, oldRow, newRow) => {
     const oldTick = toNumber(oldRow.tick);
     const newTick = toNumber(newRow.tick);
@@ -1168,15 +1180,8 @@ function handleActionCommitEvent(row: ActionCommitEventRow): void {
     list.push(commit);
     acceptedCommitsByTick.set(commit.tick, list);
 
-    // ── On-chain transparency: queue tile-claim NFT mint on MegaETH ──────────
-    // commit.walletAddress comes lowercased from SpacetimeDB; ethers.isAddress
-    // accepts both checksummed and lowercase 0x addresses, so this is fine.
-    if (chainEnabled && tileNftContract && commit.actionType === A_CLAIM
-        && commit.walletAddress && isAddress(commit.walletAddress)) {
-      // ethers expects checksummed address for contract calls
-      const checksummedWallet = commit.walletAddress; // ethers handles lowercase automatically
-      pendingTileMints.push({ wallet: checksummedWallet, q: commit.q, r: commit.r });
-    }
+    // TileNFT minting is handled by Tiles.onUpdate so every ownership change
+    // (settlement radius, capture pressure, direct claim) is covered uniformly.
   }
 
   broadcast({
