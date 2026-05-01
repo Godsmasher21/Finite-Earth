@@ -818,10 +818,12 @@ function registerSpacetimeCallbacks(conn: DbConnection): void {
     enqueueCycleBatch(newTick - 1);
   });
 
-  conn.db.Players.onInsert((ctx, _row) => {
-    if (ctx.event.tag === "SubscribeApplied") {
-      return;
-    }
+  conn.db.Players.onInsert((_ctx, row) => {
+    upsertPlayerLeaderboard(db, row);
+  });
+
+  conn.db.Players.onUpdate((_ctx, _oldRow, newRow) => {
+    upsertPlayerLeaderboard(db, newRow);
   });
 
   conn.db.PlayerIdentities.onInsert((ctx, _row) => {
@@ -1771,6 +1773,27 @@ function persistActionCommit(database: DatabaseSync, commit: GatewayActionCommit
       commit.globalCarbonDelta,
       commit.batchHash,
       commit.committedAtMs
+    );
+}
+
+function upsertPlayerLeaderboard(database: DatabaseSync, row: { wallet: string; ownedTiles: number; sustainabilityScore: number; actionsTaken: number }): void {
+  if (!row.wallet) return;
+  database
+    .prepare(`
+      INSERT INTO leaderboard (wallet_address, sustainability_score, actions_taken, owned_tiles_count, tile_nft_count, updated_at_ms)
+      VALUES (?, ?, ?, ?, 0, ?)
+      ON CONFLICT(wallet_address) DO UPDATE SET
+        sustainability_score = excluded.sustainability_score,
+        actions_taken = excluded.actions_taken,
+        owned_tiles_count = excluded.owned_tiles_count,
+        updated_at_ms = excluded.updated_at_ms
+    `)
+    .run(
+      normalizeWalletAddress(row.wallet),
+      Number(row.sustainabilityScore),
+      Number(row.actionsTaken),
+      Number(row.ownedTiles),
+      Date.now()
     );
 }
 
