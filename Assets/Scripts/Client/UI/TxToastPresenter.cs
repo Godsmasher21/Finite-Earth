@@ -5,7 +5,7 @@ using UnityEngine.UI;
 
 public class TxToastPresenter : MonoBehaviour
 {
-    private const string ExplorerBase = "https://explorer.testnet.megaeth.com/tx/";
+    private const string ExplorerBase = "https://megaeth-testnet-v2.blockscout.com/tx/";
     private const float DisplaySeconds = 2f;
     private const float FadeDuration = 0.15f;
 

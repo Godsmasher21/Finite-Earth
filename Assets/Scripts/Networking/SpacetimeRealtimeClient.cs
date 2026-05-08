@@ -87,6 +87,7 @@ public class SpacetimeRealtimeClient : MonoBehaviour
         pendingAccessToken = accessToken;
         currentReconnectDelay = reconnectDelaySeconds;
         ReconnectAttempts = 0;
+        Debug.Log($"[Realtime] EnableRealtime called — connecting to gateway WebSocket...");
         _ = ConnectAsync(accessToken);
     }
 
@@ -132,6 +133,7 @@ public class SpacetimeRealtimeClient : MonoBehaviour
             IsConnecting = false;
             ReconnectAttempts = 0;
             currentReconnectDelay = reconnectDelaySeconds;
+            Debug.Log($"[Realtime] Gateway WebSocket connected — chain events active.");
             Connected?.Invoke();
             _ = ReceiveLoop(receiveLoopTokenSource.Token);
         }
@@ -139,7 +141,7 @@ public class SpacetimeRealtimeClient : MonoBehaviour
         {
             IsConnecting = false;
             IsConnected = false;
-            Debug.LogWarning($"SpacetimeRealtimeClient: connection failed — {ex.Message}");
+            Debug.LogWarning($"[Realtime] Gateway WebSocket connection FAILED — {ex.Message}");
             ScheduleReconnect();
         }
 #endif
