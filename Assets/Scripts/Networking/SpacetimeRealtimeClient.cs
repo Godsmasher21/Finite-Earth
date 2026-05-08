@@ -39,6 +39,7 @@ public class SpacetimeRealtimeClient : MonoBehaviour
     public event Action<RemoteTileChangedMessage> RemoteTileChanged;
     public event Action<PlayerJoinedMessage> PlayerJoined;
     public event Action<PlayerLeftMessage> PlayerLeft;
+    public event Action<TileNFTMintedMessage> TileNFTMinted;
 
 #if UNITY_WEBGL && !UNITY_EDITOR
     [DllImport("__Internal")]
@@ -347,6 +348,10 @@ public class SpacetimeRealtimeClient : MonoBehaviour
         else if (json.Contains("\"type\":\"PlayerLeft\""))
         {
             PlayerLeft?.Invoke(JsonUtility.FromJson<PlayerLeftMessage>(json));
+        }
+        else if (json.Contains("\"type\":\"TileNFTMinted\""))
+        {
+            TileNFTMinted?.Invoke(JsonUtility.FromJson<TileNFTMintedMessage>(json));
         }
     }
 

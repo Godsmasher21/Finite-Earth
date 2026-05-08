@@ -1218,6 +1218,7 @@ async function drainTileMintQueue(): Promise<void> {
   try {
     const tx = await tileNftContract.claimTileBatch(wallets, qs, rs);
     console.log(`[chain] TileNFT claimTileBatch(${batch.length} tiles) tx=${tx.hash}`);
+    broadcast({ type: "TileNFTMinted", transactionHash: tx.hash, tileCount: batch.length });
     const now = Date.now();
     // Tally per-wallet counts for leaderboard.
     const countByWallet = new Map<string, number>();

@@ -99,6 +99,7 @@ public class CommandTableHudPresenter : MonoBehaviour
     [SerializeField] private ActionWheelPresenter actionWheel;
     [SerializeField] private ResourcePopupPresenter resourcePopups;
     [SerializeField] private LeaderboardPresenter leaderboard;
+    [SerializeField] private TxToastPresenter txToast;
     [SerializeField] private RectTransform eventFeedPanel;
     [SerializeField] private RectTransform miniMapPanel;
     [SerializeField] private RectTransform leaderboardPanel;
@@ -345,6 +346,7 @@ public class CommandTableHudPresenter : MonoBehaviour
         BuildActionWheel();
         BuildResourcePopups();
         BuildClimateModal();
+        BuildTxToast();
         EnsureHoverController();
 
         PlayFeedback(panelRevealFeedback);
@@ -361,6 +363,7 @@ public class CommandTableHudPresenter : MonoBehaviour
         BuildLeaderboardPanel();
         BuildActionWheel();
         BuildResourcePopups();
+        BuildTxToast();
         hudRoot.SetAsLastSibling();
     }
 
@@ -1007,6 +1010,17 @@ public class CommandTableHudPresenter : MonoBehaviour
         }
 
         resourcePopups.Initialize(hudRoot, fontAsset, worldGenerator, Camera.main);
+    }
+
+    private void BuildTxToast()
+    {
+        if (txToast == null)
+        {
+            txToast = gameObject.GetComponent<TxToastPresenter>()
+                   ?? gameObject.AddComponent<TxToastPresenter>();
+        }
+
+        txToast.Initialize();
     }
 
     private void BuildClimateModal()

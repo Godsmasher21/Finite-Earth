@@ -197,6 +197,15 @@ public sealed class PlayerJoinedMessage
     public int tick;
 }
 
+// Broadcast when a TileNFT batch is minted on-chain.
+[Serializable]
+public sealed class TileNFTMintedMessage
+{
+    public string type = "TileNFTMinted";
+    public string transactionHash;
+    public int tileCount;
+}
+
 // Sent when a player disconnects from the session.
 [Serializable]
 public sealed class PlayerLeftMessage
