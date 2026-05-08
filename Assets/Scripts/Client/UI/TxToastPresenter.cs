@@ -25,8 +25,20 @@ public class TxToastPresenter : MonoBehaviour
 
     public void Initialize()
     {
+        if (toastCanvas != null) return; // already built
         BuildToastCanvas();
-        realtimeClient = FindObjectOfType<SpacetimeRealtimeClient>();
+    }
+
+    public void BindRealtimeClient(SpacetimeRealtimeClient client)
+    {
+        if (realtimeClient != null)
+        {
+            realtimeClient.CycleCommittedToChain -= HandleChainCommit;
+            realtimeClient.TileNFTMinted -= HandleTileNFTMinted;
+        }
+
+        realtimeClient = client;
+
         if (realtimeClient != null)
         {
             realtimeClient.CycleCommittedToChain += HandleChainCommit;

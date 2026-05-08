@@ -10,6 +10,7 @@ public class NetworkSessionCoordinator : MonoBehaviour
 {
     [SerializeField] private WalletSessionController walletSession;
     [SerializeField] private SpacetimeClientManager stdbClient;
+    [SerializeField] private SpacetimeRealtimeClient realtimeClient;
     [SerializeField] private FiniteEarthGameOrchestrator orchestrator;
     [SerializeField] private CredentialAuthOverlayPresenter credentialAuthOverlay;
     [SerializeField] private bool startOfflineByDefault = true;
@@ -31,6 +32,8 @@ public class NetworkSessionCoordinator : MonoBehaviour
             walletSession = FindAnyObjectByType<WalletSessionController>();
         if (stdbClient == null)
             stdbClient = FindAnyObjectByType<SpacetimeClientManager>();
+        if (realtimeClient == null)
+            realtimeClient = FindAnyObjectByType<SpacetimeRealtimeClient>();
         if (orchestrator == null)
             orchestrator = FindAnyObjectByType<FiniteEarthGameOrchestrator>();
         if (credentialAuthOverlay == null)
@@ -129,6 +132,12 @@ public class NetworkSessionCoordinator : MonoBehaviour
 
         // Connect directly to SpacetimeDB — no gateway relay needed for game state.
         stdbClient?.Connect(walletSession.WalletAddress);
+
+        // Connect gateway WebSocket for chain event broadcasts (cycle commits, TileNFT mints).
+        realtimeClient?.EnableRealtime(accessToken);
+
+        // Bind the realtime client to the tx toast now that it's live.
+        FindAnyObjectByType<TxToastPresenter>()?.BindRealtimeClient(realtimeClient);
     }
 
     private void HandleAuthenticationFailed(string reason)
